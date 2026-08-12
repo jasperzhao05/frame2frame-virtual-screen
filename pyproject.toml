@@ -1,0 +1,158 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "frame2frame-virtual-screen"
+version = "0.3.0b1"
+description = "Render a head-locked virtual screen in front of a face by tracking and smoothing head pose."
+readme = "README.md"
+requires-python = ">=3.9,<3.14"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "ZHAO SIBO" }]
+keywords = ["head-pose", "virtual-screen", "augmented-reality", "fir-filter", "mediapipe"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Image Processing",
+    "Topic :: Multimedia :: Video",
+]
+dependencies = [
+    "numpy>=1.23,<3",
+    "scipy>=1.9,<2",
+    # MediaPipe requires the contrib OpenCV wheel. Depending on the same wheel
+    # directly avoids installing two distributions that both own the `cv2`
+    # namespace. The desktop build is intentional: `--display` uses imshow.
+    "opencv-contrib-python>=4.7,<5",
+    "matplotlib>=3.6,<4",
+    # The CLI defaults to this backend, so a plain `pip install .` must provide
+    # it. Keep the identically named extra below as a backwards-compatible
+    # spelling for existing installation instructions.
+    "mediapipe>=0.10.9,<2",
+]
+
+[project.optional-dependencies]
+# Backwards-compatible alias: MediaPipe is part of the default installation.
+mediapipe = ["mediapipe>=0.10.9,<2"]
+# Both deep estimators use the default MediaPipe detector for their face crop.
+# Hopenet weights are fetched and hash-verified by frame2frame itself.
+hopenet = [
+    "mediapipe>=0.10.9,<2",
+    "torch>=2.0,<3",
+    "torchvision>=0.15,<1",
+]
+# There is intentionally no SixDRepNet extra. sixdrepnet 0.1.6 depends on
+# opencv-python, which cannot safely coexist with the opencv-contrib-python
+# provider required by MediaPipe because both distributions own `cv2`.
+test = [
+    "packaging>=23",
+    "pytest>=7.2",
+    "pytest-cov>=4.0",
+]
+dev = [
+    "build>=1.2",
+    # Keep the complete developer extra installable on the Python 3.9 floor.
+    "mypy>=1.10,<2",
+    "packaging>=23",
+    "pytest>=7.2",
+    "pytest-cov>=4.0",
+    "ruff>=0.9",
+    "twine>=5.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/jasperzhao05/frame2frame-virtual-screen"
+Issues = "https://github.com/jasperzhao05/frame2frame-virtual-screen/issues"
+Source = "https://github.com/jasperzhao05/frame2frame-virtual-screen"
+
+[project.scripts]
+frame2frame = "frame2frame.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["frame2frame*"]
+
+[tool.setuptools.package-data]
+frame2frame = ["py.typed"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "C90"]
+# B027: PoseEstimator.close() is an intentional optional no-op hook, not abstract.
+ignore = ["B008", "B027"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.format]
+docstring-code-format = true
+line-ending = "lf"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--strict-config", "--strict-markers"]
+markers = [
+    "integration: requires an external program or service beyond the Python environment",
+]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.coverage.run]
+branch = true
+source = ["frame2frame"]
+
+[tool.coverage.report]
+fail_under = 70
+show_missing = true
+skip_covered = true
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]
+
+[tool.mypy]
+# Type-check on the CI quality interpreter. Runtime compatibility with the
+# Python 3.9 floor is exercised independently by the test matrix.
+python_version = "3.12"
+files = ["frame2frame"]
+check_untyped_defs = true
+ignore_missing_imports = true
+no_implicit_optional = true
+pretty = true
+show_error_codes = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+
+# Tighten the definition boundary only after a module is fully annotated.
+# Keep this explicit list as a progress ledger instead of filling gaps with Any.
+[[tool.mypy.overrides]]
+module = [
+    "frame2frame.__init__",
+    "frame2frame.__main__",
+    "frame2frame._version",
+    "frame2frame.cli",
+    "frame2frame.config",
+    "frame2frame._diagnostics",
+    "frame2frame._downloads",
+    "frame2frame.filters",
+    "frame2frame.geometry",
+    "frame2frame._media",
+    "frame2frame.pipeline",
+    "frame2frame.pose.*",
+    "frame2frame.render",
+    "frame2frame._textures",
+    "frame2frame._tracking",
+    "frame2frame.video",
+]
+disallow_untyped_defs = true
