@@ -27,8 +27,8 @@ jobs:
       FRAME2FRAME_CACHE: /tmp/frame2frame-cache
       MPLCONFIGDIR: /tmp/matplotlib
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -49,7 +49,7 @@ jobs:
       - name: Test ffmpeg integration and enforce combined coverage
         run: python -m pytest -q -m integration --cov=frame2frame --cov-append --cov-report=term-missing
       - name: Check smoothing benchmark thresholds
-        run: python scripts/benchmark_smoothing.py --check
+        run: python -m scripts.benchmark_smoothing --check
 
   test:
     name: Python ${{ matrix.python-version }} deterministic tests
@@ -64,8 +64,8 @@ jobs:
         # Python 3.12 is exercised by the stricter quality job above.
         python-version: ["3.9", "3.10", "3.11", "3.13"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
@@ -87,8 +87,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -111,8 +111,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip

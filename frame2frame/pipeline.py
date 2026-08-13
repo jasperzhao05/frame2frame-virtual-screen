@@ -7,7 +7,7 @@ import time
 from collections.abc import Callable, Iterator
 from contextlib import ExitStack
 from dataclasses import dataclass
-from typing import Protocol, Union, cast
+from typing import Optional, Protocol, Union, cast
 
 import numpy as np
 
@@ -174,7 +174,7 @@ def _estimate_at(
     estimate_at = getattr(estimator, "estimate_at", None)
     if callable(estimate_at):
         timestamp_estimate = cast(
-            Callable[[np.ndarray, float], FaceObservation | None],
+            Callable[[np.ndarray, float], Optional[FaceObservation]],
             estimate_at,
         )
         return timestamp_estimate(frame, timestamp_ms)

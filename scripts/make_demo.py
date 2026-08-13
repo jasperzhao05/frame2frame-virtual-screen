@@ -1,11 +1,11 @@
-"""Create a fully synthetic, reproducible end-to-end demo.
+"""Create a fully synthetic, reproducible pipeline integration demo.
 
 The generated input, observations, and virtual-screen texture are all produced
 locally. No real face, model weight, download, or network access is involved.
 Seeded detector noise makes the stabilisation visible in the angle plot.
 
-    python scripts/make_demo.py --out output/demo.mp4
-    python scripts/make_demo.py --filter oneeuro --seed 7
+    python -m scripts.make_demo --out output/demo.mp4
+    python -m scripts.make_demo --filter oneeuro --seed 7
 """
 
 from __future__ import annotations

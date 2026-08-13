@@ -4,11 +4,11 @@ Source: Intel IoT DevKit sample-videos, licensed CC BY 4.0. Every payload is
 verified against a pinned SHA-256 digest and remains in Git-ignored directories.
 Processing needs a pose backend; downloading alone does not.
 
-    python scripts/fetch_examples.py                  # default mediapipe backend
-    python scripts/fetch_examples.py --backend hopenet
-    python scripts/fetch_examples.py --limit 1        # just the first clip
-    python scripts/fetch_examples.py --download-only
-    python scripts/fetch_examples.py --list
+    python -m scripts.fetch_examples                  # default mediapipe backend
+    python -m scripts.fetch_examples --backend hopenet
+    python -m scripts.fetch_examples --limit 1        # just the first clip
+    python -m scripts.fetch_examples --download-only
+    python -m scripts.fetch_examples --list
 """
 
 from __future__ import annotations
