@@ -77,7 +77,7 @@ def test_distribution_metadata_matches_importable_package():
 
     assert installed.version == frame2frame.__version__
     assert SpecifierSet(installed.metadata["Requires-Python"]) == SpecifierSet(">=3.9,<3.14")
-    assert installed.locate_file("frame2frame/py.typed").is_file()
+    assert Path(frame2frame.__file__).with_name("py.typed").is_file()
     assert any(
         entry_point.group == "console_scripts"
         and entry_point.name == "frame2frame"

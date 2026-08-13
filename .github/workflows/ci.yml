@@ -45,9 +45,9 @@ jobs:
       - name: Type-check
         run: mypy
       - name: Test deterministic contract with coverage
-        run: pytest -q -m "not integration" --cov=frame2frame --cov-report=
+        run: python -m pytest -q -m "not integration" --cov=frame2frame --cov-report=
       - name: Test ffmpeg integration and enforce combined coverage
-        run: pytest -q -m integration --cov=frame2frame --cov-append --cov-report=term-missing
+        run: python -m pytest -q -m integration --cov=frame2frame --cov-append --cov-report=term-missing
       - name: Check smoothing benchmark thresholds
         run: python scripts/benchmark_smoothing.py --check
 
@@ -76,7 +76,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[test]"
       - name: Test without external-program integrations
-        run: pytest -q -m "not integration"
+        run: python -m pytest -q -m "not integration"
 
   platform-smoke:
     name: Python 3.12 smoke (${{ matrix.os }})
@@ -104,7 +104,7 @@ jobs:
           python -c "import frame2frame; print(frame2frame.__version__, frame2frame.__file__)"
           python -m frame2frame --help
       - name: Test platform-neutral contracts only
-        run: pytest -q -m "not integration" tests/test_filters.py tests/test_geometry.py tests/test_packaging.py
+        run: python -m pytest -q -m "not integration" tests/test_filters.py tests/test_geometry.py tests/test_packaging.py
 
   package:
     name: Build and verify distributions
@@ -189,7 +189,7 @@ jobs:
           frame2frame-wheel-smoke/bin/python -m pip install "${{ github.workspace }}"/dist/*.whl
           frame2frame-wheel-smoke/bin/python -m pip check
           frame2frame-wheel-smoke/bin/python -m frame2frame --help
-          frame2frame-wheel-smoke/bin/python -c "from pathlib import Path; import cv2, frame2frame, mediapipe, sys; assert Path(frame2frame.__file__).resolve().is_relative_to(Path(sys.prefix).resolve()); print(frame2frame.__version__, cv2.__version__, mediapipe.__version__, frame2frame.__file__)"
+          frame2frame-wheel-smoke/bin/python -c "from pathlib import Path; import cv2, frame2frame, mediapipe, sys; package = Path(frame2frame.__file__).resolve(); assert package.is_relative_to(Path(sys.prefix).resolve()); assert package.with_name('py.typed').is_file(); print(frame2frame.__version__, cv2.__version__, mediapipe.__version__, frame2frame.__file__)"
       - name: Install and smoke-test source distribution
         working-directory: ${{ runner.temp }}
         run: |
@@ -198,7 +198,7 @@ jobs:
           frame2frame-sdist-smoke/bin/python -m pip install "${{ github.workspace }}"/dist/*.tar.gz
           frame2frame-sdist-smoke/bin/python -m pip check
           frame2frame-sdist-smoke/bin/python -m frame2frame --help
-          frame2frame-sdist-smoke/bin/python -c "from pathlib import Path; import cv2, frame2frame, mediapipe, sys; assert Path(frame2frame.__file__).resolve().is_relative_to(Path(sys.prefix).resolve()); print(frame2frame.__version__, cv2.__version__, mediapipe.__version__, frame2frame.__file__)"
+          frame2frame-sdist-smoke/bin/python -c "from pathlib import Path; import cv2, frame2frame, mediapipe, sys; package = Path(frame2frame.__file__).resolve(); assert package.is_relative_to(Path(sys.prefix).resolve()); assert package.with_name('py.typed').is_file(); print(frame2frame.__version__, cv2.__version__, mediapipe.__version__, frame2frame.__file__)"
       - name: Record distribution checksums
         working-directory: dist
         run: sha256sum *.whl *.tar.gz > SHA256SUMS
