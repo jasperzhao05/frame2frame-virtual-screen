@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use frame2frame in published work, please cite this software and the relevant backend papers."
+title: "frame2frame: head-locked virtual-screen stabilisation"
+type: software
+authors:
+  - family-names: ZHAO
+    given-names: Sibo
+version: 0.3.0b1
+date-released: 2026-08-13
+repository-code: "https://github.com/jasperzhao05/frame2frame-virtual-screen"
+url: "https://github.com/jasperzhao05/frame2frame-virtual-screen"
+license: MIT
+keywords:
+  - head pose
+  - temporal filtering
+  - augmented reality
+  - video rendering

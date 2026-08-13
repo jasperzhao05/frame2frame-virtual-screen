@@ -1,0 +1,122 @@
+# Third-party notices
+
+The repository does not commit model weights or full third-party source videos.
+It does include one short, attributed derived GIF described below. Optional
+assets are acquired at runtime and retain their upstream terms. The project's
+MIT license does not replace those terms.
+
+## Runtime components and models
+
+### MediaPipe Face Landmarker
+
+- Purpose: default face landmarks and facial transformation matrix; face crop
+  detector for optional deep backends.
+- Software: [google-ai-edge/mediapipe](https://github.com/google-ai-edge/mediapipe),
+  Apache License 2.0.
+- Model source:
+  `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`
+- Pinned SHA-256:
+  `64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff`
+- Pinned size: 3,758,596 bytes.
+- Model guide:
+  [MediaPipe Face Landmarker](https://developers.google.com/edge/mediapipe/solutions/vision/face_landmarker).
+
+The model is downloaded into the user's cache and is not redistributed here.
+Review the upstream model terms and privacy notice for the intended use.
+
+### Hopenet
+
+- Purpose: optional ResNet-50 head-pose regression backend.
+- Authors: Nataniel Ruiz, Eunji Chong, and James M. Rehg.
+- Code/model source:
+  [natanielruiz/deep-head-pose](https://github.com/natanielruiz/deep-head-pose).
+- Upstream repository license: Apache License 2.0.
+- Published robust-weight file ID:
+  `1m25PrSE7g9D2q2XJVMR6IA7RaCvWSzCR`.
+- Pinned SHA-256:
+  `1e0c6ddfda0e19a679607480c10875020de29b3984f187ec311c5e0802b6b6d5`.
+- Pinned size: 95,924,799 bytes.
+
+The weights are downloaded into the user's cache and are not redistributed
+here. Cite the paper below when using this backend in research.
+
+### 6DRepNet
+
+- Purpose: experimental optional backend using a continuous 6D rotation
+  representation.
+- Authors: Thorsten Hempel, Ahmed A. Abdelrahman, and Ayoub Al-Hamadi.
+- Package/source:
+  [thohemp/6DRepNet](https://github.com/thohemp/6DRepNet), MIT License.
+
+The upstream Python package manages its own pretrained asset and currently
+declares `opencv-python`. MediaPipe requires `opencv-contrib-python`; installing
+both is unsafe because the distributions own the same `cv2` namespace. This
+repository therefore keeps only a compatibility adapter and does not publish a
+6DRepNet installation extra. It does not pin or redistribute the upstream
+asset; review its source, dependency metadata, and terms before controlled use.
+
+### Python and media dependencies
+
+NumPy, SciPy, OpenCV, Matplotlib, MediaPipe, PyTorch, torchvision, and optional
+packages are installed separately by the Python package manager. Their own
+distributions include the authoritative license texts and notices. `ffmpeg` is
+an optional system executable and is not bundled.
+
+## Example footage
+
+`scripts/fetch_examples.py` can download selected files from the archived
+[Intel IoT DevKit sample-videos repository](https://github.com/intel-iot-devkit/sample-videos).
+
+- Licensor/source: Intel IoT DevKit `sample-videos` contributors.
+- License: [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/).
+- Use here: optional evaluation input; derived outputs add a virtual-screen
+  overlay, pose diagnostics, and may be re-encoded.
+- Storage: `examples/inputs/` and `examples/outputs/`, both Git-ignored.
+
+Verified source digests:
+
+| File | Bytes | SHA-256 |
+|---|---:|---|
+| `head-pose-face-detection-female.mp4` | 15,628,037 | `e9290821ac0e0a186e8f5cae5e3b56e8062921642d46a5f65f1ca5b311811fc5` |
+| `head-pose-face-detection-male.mp4` | 15,522,596 | `994ca625f091d1422b93d97a4bd67c4de1e5ed7064c9079a68cd7526c96bfd68` |
+| `head-pose-face-detection-female-and-male.mp4` | 16,788,193 | `650166430c4bf9ddc470ac17a86d1fcbd6d76c64e60ed73675fdc6b3e3d3af38` |
+| `face-demographics-walking.mp4` | 6,406,124 | `91af68da819a9c0caab06c6c21414e6ebdb378ff28fee90e1f937165bc1007c6` |
+| `face-demographics-walking-and-pause.mp4` | 9,406,029 | `d88ab9aa03634f66f8815db3dc940e1cdd80b098440effb20882e814fd206bf5` |
+
+When publishing a derived clip, retain this attribution, link the CC BY 4.0
+license, and indicate that overlays/re-encoding modified the source.
+
+### Committed derived usage example
+
+`docs/demo-mediapipe.gif` derives from Intel IoT DevKit
+[`head-pose-face-detection-male.mp4`](https://github.com/intel-iot-devkit/sample-videos/raw/master/head-pose-face-detection-male.mp4),
+licensed under
+[Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/).
+It uses source time 00:06–00:12. The excerpt was trimmed, muted, re-encoded,
+labelled, reduced to 10 fps and 128 colours, and placed beside a derived output
+with the project-owned virtual-screen texture and border. The right pane was
+produced by the default MediaPipe backend and FIR filter. Its six-second segment
+was selected from the first 72 source-rate frames of a 96-frame run in which all
+frames had detections; the final GIF contains 60 frames at 10 fps. This asset is
+a usage example, not backend evaluation, accuracy evidence, or a general
+performance claim.
+
+## Project-owned demo assets
+
+`docs/demo-synthetic.svg`, `docs/demo-comparison.gif`, and everything produced
+by `scripts/make_demo.py` or `scripts/make_showcase.py` are generated from
+project-authored shapes, signals, and textures. They contain no person footage,
+third-party image, or model output and are covered by the repository's MIT
+License.
+
+## Research references
+
+- N. Ruiz, E. Chong, and J. M. Rehg, “Fine-Grained Head Pose Estimation
+  Without Keypoints,” CVPR Workshops, 2018.
+  [Paper](https://openaccess.thecvf.com/content_cvpr_2018_workshops/w41/html/Ruiz_Fine-Grained_Head_Pose_CVPR_2018_paper.html)
+- T. Hempel, A. A. Abdelrahman, and A. Al-Hamadi, “6D Rotation Representation
+  for Unconstrained Head Pose Estimation,” ICIP, 2022.
+  [DOI: 10.1109/ICIP46576.2022.9897219](https://doi.org/10.1109/ICIP46576.2022.9897219)
+- G. Casiez, N. Roussel, and D. Vogel, “1 € Filter: A Simple Speed-based
+  Low-pass Filter for Noisy Input in Interactive Systems,” CHI, 2012.
+  [DOI: 10.1145/2207676.2208639](https://doi.org/10.1145/2207676.2208639)

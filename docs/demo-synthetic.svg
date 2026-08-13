@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" role="img" aria-labelledby="title desc">
+  <title id="title">frame2frame system overview</title>
+  <desc id="desc">A synthetic head-orientation signal becoming smooth before projection onto a perspective virtual screen.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07111f"/>
+      <stop offset="1" stop-color="#102841"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5cf2d6"/>
+      <stop offset="1" stop-color="#3897ff"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M24 0H0V24" fill="none" stroke="#b9fff3" stroke-opacity=".18"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="480" rx="28" fill="url(#bg)"/>
+  <path d="M0 390C240 335 405 445 645 390S970 310 1200 365V480H0Z" fill="#07101c" opacity=".72"/>
+
+  <text x="54" y="62" fill="#e8f5ff" font-family="ui-sans-serif,system-ui,sans-serif" font-size="29" font-weight="700" letter-spacing="1.2">FRAME2FRAME</text>
+  <text x="54" y="93" fill="#8eaac0" font-family="ui-monospace,SFMono-Regular,monospace" font-size="15" letter-spacing="2">SYSTEM OVERVIEW · SYNTHETIC SIGNALS</text>
+
+  <g transform="translate(80 130)">
+    <ellipse cx="138" cy="132" rx="84" ry="105" fill="#263b50" stroke="#86a8c4" stroke-width="3"/>
+    <path d="M77 90Q138 40 199 90" fill="none" stroke="#9ec0db" stroke-width="4"/>
+    <circle cx="109" cy="122" r="8" fill="#dcefff"/>
+    <circle cx="167" cy="122" r="8" fill="#dcefff"/>
+    <path d="M112 174Q138 191 164 174" fill="none" stroke="#dcefff" stroke-width="4" stroke-linecap="round"/>
+    <path d="M138 136L148 158H128" fill="none" stroke="#7896ae" stroke-width="3" stroke-linejoin="round"/>
+    <circle cx="138" cy="132" r="116" fill="none" stroke="#5cf2d6" stroke-opacity=".18" stroke-width="2" stroke-dasharray="5 10"/>
+    <path d="M138 132L238 107" stroke="#ff6c8d" stroke-width="4" stroke-linecap="round"/>
+    <path d="M138 132L221 97" stroke="#ff6c8d" stroke-opacity=".28" stroke-width="3"/>
+    <path d="M138 132L230 119" stroke="#ff6c8d" stroke-opacity=".28" stroke-width="3"/>
+    <text x="53" y="276" fill="#8eaac0" font-family="ui-monospace,SFMono-Regular,monospace" font-size="14">NOISY HEAD POSE</text>
+  </g>
+
+  <g transform="translate(390 148)">
+    <rect width="332" height="180" rx="16" fill="#0a1727" stroke="#29445c"/>
+    <path d="M16 48L316 48M16 92L316 92M16 136L316 136" stroke="#29445c" stroke-width="1"/>
+    <path d="M16 129L32 92L48 112L64 61L80 93L96 70L112 117L128 64L144 104L160 78L176 120L192 71L208 107L224 83L240 111L256 69L272 98L288 76L316 91"
+          fill="none" stroke="#8a9bad" stroke-opacity=".72" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M16 113C54 111 66 91 99 91S143 111 176 108S218 79 250 80S284 94 316 88"
+          fill="none" stroke="#5cf2d6" stroke-width="5" stroke-linecap="round" filter="url(#glow)"/>
+    <circle cx="356" cy="90" r="24" fill="#16344c" stroke="#5cf2d6" stroke-width="2"/>
+    <path d="M347 90H365M358 83L365 90L358 97" fill="none" stroke="#dffff9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="74" y="219" fill="#8eaac0" font-family="ui-monospace,SFMono-Regular,monospace" font-size="14">TEMPORAL STABILISATION</text>
+  </g>
+
+  <g transform="translate(806 112)">
+    <path d="M18 80L300 34L338 258L48 284Z" fill="#16344c" stroke="#5cf2d6" stroke-opacity=".28" stroke-width="12" filter="url(#glow)"/>
+    <path d="M18 80L300 34L338 258L48 284Z" fill="url(#screen)" opacity=".78"/>
+    <path d="M18 80L300 34L338 258L48 284Z" fill="url(#grid)"/>
+    <path d="M56 112L279 77L299 225L77 244Z" fill="#07111f" fill-opacity=".82" stroke="#dffff9" stroke-opacity=".6"/>
+    <text x="110" y="151" fill="#eafffb" font-family="ui-sans-serif,system-ui,sans-serif" font-size="22" font-weight="700" transform="rotate(-8 110 151)">HEAD-LOCKED</text>
+    <text x="129" y="187" fill="#81ffe7" font-family="ui-monospace,SFMono-Regular,monospace" font-size="16" transform="rotate(-8 129 187)">SUBPIXEL WARP</text>
+    <circle cx="176" cy="207" r="5" fill="#ff6c8d"/>
+    <path d="M152 207H200M176 186V228" stroke="#ff6c8d" stroke-width="2" opacity=".8"/>
+    <text x="82" y="335" fill="#8eaac0" font-family="ui-monospace,SFMono-Regular,monospace" font-size="14">STEADY VIRTUAL SCREEN</text>
+  </g>
+
+  <g fill="#8eaac0" font-family="ui-monospace,SFMono-Regular,monospace" font-size="13">
+    <text x="54" y="445">POSE</text>
+    <text x="418" y="445">FILTER</text>
+    <text x="820" y="445">PROJECT · WARP · COMPOSITE</text>
+  </g>
+</svg>

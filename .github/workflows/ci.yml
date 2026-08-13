@@ -1,0 +1,211 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  quality:
+    name: Quality and Linux integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      FRAME2FRAME_CACHE: /tmp/frame2frame-cache
+      MPLCONFIGDIR: /tmp/matplotlib
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install OpenCV runtime libraries
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg libgl1 libglib2.0-0
+      - name: Install quality dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: Lint
+        run: ruff check .
+      - name: Check formatting
+        run: ruff format --check .
+      - name: Type-check
+        run: mypy
+      - name: Test deterministic contract with coverage
+        run: python -m pytest -q -m "not integration" --cov=frame2frame --cov-report=
+      - name: Test ffmpeg integration and enforce combined coverage
+        run: python -m pytest -q -m integration --cov=frame2frame --cov-append --cov-report=term-missing
+      - name: Check smoothing benchmark thresholds
+        run: python -m scripts.benchmark_smoothing --check
+
+  test:
+    name: Python ${{ matrix.python-version }} deterministic tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      FRAME2FRAME_CACHE: /tmp/frame2frame-cache
+      MPLCONFIGDIR: /tmp/matplotlib
+    strategy:
+      fail-fast: false
+      matrix:
+        # Python 3.12 is exercised by the stricter quality job above.
+        python-version: ["3.9", "3.10", "3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install OpenCV runtime libraries
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libgl1 libglib2.0-0
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[test]"
+      - name: Test without external-program integrations
+        run: python -m pytest -q -m "not integration"
+
+  platform-smoke:
+    name: Python 3.12 smoke (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install Linux OpenCV runtime libraries
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libgl1 libglib2.0-0
+      - name: Install the default application and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[test]"
+      - name: Check import and CLI entry point
+        run: |
+          python -c "import frame2frame; print(frame2frame.__version__, frame2frame.__file__)"
+          python -m frame2frame --help
+      - name: Test platform-neutral contracts only
+        run: python -m pytest -q -m "not integration" tests/test_filters.py tests/test_geometry.py tests/test_packaging.py
+
+  package:
+    name: Build and verify distributions
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Verify a release tag matches the package version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          python - <<'PY'
+          import os
+          import tomllib
+          from pathlib import Path
+
+          with Path("pyproject.toml").open("rb") as project_file:
+              version = tomllib.load(project_file)["project"]["version"]
+          tag = os.environ["GITHUB_REF_NAME"]
+          expected = f"v{version}"
+          if tag != expected:
+              raise SystemExit(f"release tag {tag!r} does not match {expected!r}")
+          print(f"verified release tag {tag}")
+          PY
+      - name: Install OpenCV runtime libraries
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libgl1 libglib2.0-0
+      - name: Build wheel and source distribution
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "build>=1.2" "twine>=5.1"
+          python -m build
+          python -m twine check dist/*
+      - name: Verify source distribution against MANIFEST.in
+        run: |
+          python - <<'PY'
+          import fnmatch
+          import shlex
+          import tarfile
+          from pathlib import Path, PurePosixPath
+
+          archive = next(Path("dist").glob("*.tar.gz"))
+          required = set()
+          for raw_line in Path("MANIFEST.in").read_text(encoding="utf-8").splitlines():
+              fields = shlex.split(raw_line, comments=True)
+              if not fields:
+                  continue
+              directive, *arguments = fields
+              if directive == "include":
+                  for pattern in arguments:
+                      required.update(
+                          path.as_posix() for path in Path().glob(pattern) if path.is_file()
+                      )
+              elif directive == "recursive-include":
+                  directory, *patterns = arguments
+                  required.update(
+                      path.as_posix()
+                      for path in Path(directory).rglob("*")
+                      if path.is_file()
+                      and any(fnmatch.fnmatch(path.name, pattern) for pattern in patterns)
+                  )
+              else:
+                  raise SystemExit(f"unsupported MANIFEST.in directive: {directive}")
+
+          with tarfile.open(archive) as source:
+              members = {
+                  PurePosixPath(*PurePosixPath(name).parts[1:]).as_posix()
+                  for name in source.getnames()
+              }
+          missing = sorted(required - members)
+          if missing:
+              raise SystemExit(f"source distribution is missing: {', '.join(missing)}")
+          print(f"verified {len(required)} MANIFEST.in artifacts in {archive.name}")
+          PY
+      - name: Install and smoke-test wheel
+        working-directory: ${{ runner.temp }}
+        run: |
+          python -m venv frame2frame-wheel-smoke
+          frame2frame-wheel-smoke/bin/python -m pip install --upgrade pip
+          frame2frame-wheel-smoke/bin/python -m pip install "${{ github.workspace }}"/dist/*.whl
+          frame2frame-wheel-smoke/bin/python -m pip check
+          frame2frame-wheel-smoke/bin/python -m frame2frame --help
+          frame2frame-wheel-smoke/bin/python -c "from pathlib import Path; import cv2, frame2frame, mediapipe, sys; package = Path(frame2frame.__file__).resolve(); assert package.is_relative_to(Path(sys.prefix).resolve()); assert package.with_name('py.typed').is_file(); print(frame2frame.__version__, cv2.__version__, mediapipe.__version__, frame2frame.__file__)"
+      - name: Install and smoke-test source distribution
+        working-directory: ${{ runner.temp }}
+        run: |
+          python -m venv frame2frame-sdist-smoke
+          frame2frame-sdist-smoke/bin/python -m pip install --upgrade pip
+          frame2frame-sdist-smoke/bin/python -m pip install "${{ github.workspace }}"/dist/*.tar.gz
+          frame2frame-sdist-smoke/bin/python -m pip check
+          frame2frame-sdist-smoke/bin/python -m frame2frame --help
+          frame2frame-sdist-smoke/bin/python -c "from pathlib import Path; import cv2, frame2frame, mediapipe, sys; package = Path(frame2frame.__file__).resolve(); assert package.is_relative_to(Path(sys.prefix).resolve()); assert package.with_name('py.typed').is_file(); print(frame2frame.__version__, cv2.__version__, mediapipe.__version__, frame2frame.__file__)"
+      - name: Record distribution checksums
+        working-directory: dist
+        run: sha256sum *.whl *.tar.gz > SHA256SUMS
+      - name: Upload verified distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: frame2frame-distributions-${{ github.sha }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14

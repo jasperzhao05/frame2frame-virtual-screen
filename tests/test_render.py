@@ -1,0 +1,162 @@
+import cv2
+import numpy as np
+import pytest
+
+from frame2frame import _textures as textures
+from frame2frame import render
+from frame2frame.config import ScreenConfig
+from frame2frame.pose.base import FaceObservation, HeadPose
+
+
+def _full_frame_reference(frame, content, quad, alpha):
+    if content.ndim == 3 and content.shape[2] == 4:
+        bgr = content[:, :, :3]
+        source_alpha = content[:, :, 3].astype(np.float32) / 255.0
+    else:
+        bgr = content
+        source_alpha = np.ones(content.shape[:2], np.float32)
+    sh, sw = bgr.shape[:2]
+    src = np.float32([[0, 0], [sw, 0], [sw, sh], [0, sh]])
+    matrix = cv2.getPerspectiveTransform(src, quad)
+    h, w = frame.shape[:2]
+    warped = cv2.warpPerspective(bgr, matrix, (w, h), flags=cv2.INTER_LINEAR)
+    warped_alpha = (
+        cv2.warpPerspective(source_alpha, matrix, (w, h), flags=cv2.INTER_LINEAR) * alpha
+    )[:, :, None]
+    blended = (
+        frame.astype(np.float32) * (1 - warped_alpha) + warped.astype(np.float32) * warped_alpha
+    )
+    return blended.astype(frame.dtype)
+
+
+def test_roi_paste_matches_full_frame_reference():
+    rng = np.random.default_rng(7)
+    frame = rng.integers(0, 256, (180, 240, 3), dtype=np.uint8)
+    content = rng.integers(0, 256, (45, 80, 4), dtype=np.uint8)
+    quad = np.float32([[70.3, 45.4], [171.7, 50.2], [164.4, 128.8], [61.1, 120.6]])
+    expected = _full_frame_reference(frame.copy(), content, quad, 0.73)
+    actual = frame.copy()
+
+    render._paste_content(actual, textures.prepare_texture(content), quad, 0.73)
+
+    difference = np.abs(actual.astype(np.int16) - expected.astype(np.int16))
+    assert difference.max() <= 1
+    assert np.count_nonzero(difference) < frame.size * 0.01
+
+
+def test_paste_warps_only_the_quad_roi(monkeypatch):
+    frame = np.zeros((300, 500, 3), np.uint8)
+    content = np.full((30, 50, 3), 200, np.uint8)
+    quad = np.float32([[20, 30], [90, 30], [90, 80], [20, 80]])
+    sizes = []
+    original = render.cv2.warpPerspective
+
+    def recording_warp(*args, **kwargs):
+        sizes.append(args[2])
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(render.cv2, "warpPerspective", recording_warp)
+    render._paste_content(frame, content, quad, 1.0)
+
+    assert len(sizes) == 2
+    assert all(width < 500 and height < 300 for width, height in sizes)
+
+
+def test_zero_alpha_and_offscreen_quad_leave_frame_unchanged():
+    initial = np.full((30, 40, 3), 17, np.uint8)
+    texture = np.full((5, 8, 3), 200, np.uint8)
+
+    zero_alpha = initial.copy()
+    render._paste_content(
+        zero_alpha,
+        texture,
+        np.float32([[2, 2], [20, 2], [20, 20], [2, 20]]),
+        0.0,
+    )
+    offscreen = initial.copy()
+    render._paste_content(
+        offscreen,
+        texture,
+        np.float32([[-30, -30], [-20, -30], [-20, -20], [-30, -20]]),
+        1.0,
+    )
+
+    assert np.array_equal(zero_alpha, initial)
+    assert np.array_equal(offscreen, initial)
+
+
+def test_asymmetric_texture_keeps_readable_left_to_right_orientation():
+    frame = np.zeros((80, 120, 3), np.uint8)
+    texture = np.zeros((20, 40, 3), np.uint8)
+    texture[:, :20] = (0, 0, 255)
+    texture[:, 20:] = (0, 255, 0)
+    quad = np.float32([[20, 20], [100, 20], [100, 60], [20, 60]])
+
+    render._paste_content(frame, texture, quad, 1.0)
+
+    assert frame[40, 35, 2] > frame[40, 35, 1]  # red remains on the left
+    assert frame[40, 85, 1] > frame[40, 85, 2]  # green remains on the right
+
+
+def test_screen_with_any_corner_behind_camera_is_a_safe_noop(monkeypatch):
+    frame = np.full((80, 120, 3), 17, np.uint8)
+    observation = FaceObservation(HeadPose(0, 0, 0), (60, 40), 20, (40, 20, 80, 60))
+    corners = np.array(
+        [[-1, -1, 10], [1, -1, 10], [1, 1, -1], [-1, 1, 10]],
+        dtype=float,
+    )
+    monkeypatch.setattr(render.geometry, "gaze_plane_corners", lambda *args, **kwargs: corners)
+
+    actual = render.draw_virtual_screen(
+        frame.copy(),
+        observation,
+        ScreenConfig(),
+        np.full((10, 10, 3), 200, np.uint8),
+    )
+
+    assert np.array_equal(actual, frame)
+
+
+def test_near_camera_projection_too_large_for_safe_contours_is_a_noop(monkeypatch):
+    frame = np.full((80, 120, 3), 17, np.uint8)
+    observation = FaceObservation(HeadPose(0, 0, 0), (60, 40), 20, (40, 20, 80, 60))
+    corners = np.array(
+        [
+            [-1, -1, 2e-6],
+            [1, -1, 2e-6],
+            [1, 1, 2e-6],
+            [-1, 1, 2e-6],
+        ],
+        dtype=float,
+    )
+    monkeypatch.setattr(render.geometry, "gaze_plane_corners", lambda *args, **kwargs: corners)
+
+    actual = render.draw_virtual_screen(
+        frame.copy(),
+        observation,
+        ScreenConfig(),
+        np.full((10, 10, 3), 200, np.uint8),
+    )
+
+    assert np.array_equal(actual, frame)
+
+
+def test_screen_opacity_scales_texture_compositing(monkeypatch):
+    frame = np.zeros((80, 120, 3), np.uint8)
+    observation = FaceObservation(HeadPose(0, 0, 0), (60, 40), 20, (40, 20, 80, 60))
+    captured = {}
+    monkeypatch.setattr(
+        render,
+        "_paste_content",
+        lambda frame, content, quad, alpha: captured.update(alpha=alpha),
+    )
+
+    render.draw_virtual_screen(
+        frame,
+        observation,
+        ScreenConfig(alpha=0.8),
+        np.full((10, 10, 3), 200, np.uint8),
+        opacity=0.25,
+    )
+
+    assert captured["alpha"] == pytest.approx(0.2)
