@@ -6,6 +6,7 @@ import argparse
 import logging
 
 from . import __version__
+from ._doctor import run_doctor
 from .config import FilterConfig, PipelineConfig, ScreenConfig
 from .pipeline import run
 from .pose import available_backends
@@ -20,6 +21,11 @@ def build_parser() -> argparse.ArgumentParser:
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("-i", "--input", help="input video path")
     source.add_argument("--webcam", type=int, metavar="INDEX", help="webcam device index")
+    source.add_argument(
+        "--doctor",
+        action="store_true",
+        help="check runtime readiness without downloading models or opening a source",
+    )
 
     parser.add_argument(
         "-o",
@@ -62,6 +68,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--screen-height", type=float, default=2.0, help="screen height in face-size units"
+    )
+    parser.add_argument(
+        "--focal-length-px",
+        type=float,
+        help="calibrated camera focal length in pixels (default: max frame dimension)",
     )
     parser.add_argument("--cutoff", type=float, default=2.5, help="FIR low-pass cutoff in Hz")
     parser.add_argument(
@@ -116,6 +127,7 @@ def config_from_args(args: argparse.Namespace) -> PipelineConfig:
             distance_mul=args.screen_distance,
             width_mul=args.screen_width,
             height_mul=args.screen_height,
+            focal_length=args.focal_length_px,
             texture_path=args.texture,
         ),
         compensate_delay=not args.no_delay_compensation,
@@ -134,6 +146,8 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     parser = build_parser()
     args = parser.parse_args(argv)
+    if args.doctor:
+        return run_doctor()
     try:
         summary = run(config_from_args(args))
     except (ImportError, OSError, RuntimeError, ValueError) as error:

@@ -98,6 +98,35 @@ def test_asymmetric_texture_keeps_readable_left_to_right_orientation():
     assert frame[40, 85, 1] > frame[40, 85, 2]  # green remains on the right
 
 
+@pytest.mark.parametrize(
+    ("yaw", "pitch", "roll"),
+    [
+        (-45, -30, -30),
+        (-45, -30, 30),
+        (-45, 30, -30),
+        (-45, 30, 30),
+        (45, -30, -30),
+        (45, -30, 30),
+        (45, 30, -30),
+        (45, 30, 30),
+    ],
+)
+def test_normal_operating_envelope_projects_to_a_finite_quad(yaw, pitch, roll):
+    frame = np.zeros((180, 320, 3), np.uint8)
+    observation = FaceObservation(
+        HeadPose(yaw, pitch, roll),
+        (160, 90),
+        28,
+        (132, 62, 188, 118),
+    )
+
+    projection = render._project_screen(frame, observation, ScreenConfig())
+
+    assert projection is not None
+    assert np.isfinite(projection.quad).all()
+    assert np.isfinite(projection.pixels).all()
+
+
 def test_screen_with_any_corner_behind_camera_is_a_safe_noop(monkeypatch):
     frame = np.full((80, 120, 3), 17, np.uint8)
     observation = FaceObservation(HeadPose(0, 0, 0), (60, 40), 20, (40, 20, 80, 60))

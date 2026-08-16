@@ -48,6 +48,8 @@ def test_cli_translates_flags_to_pipeline_config(monkeypatch, tmp_path):
                 "3.0",
                 "--screen-height",
                 "1.5",
+                "--focal-length-px",
+                "812.5",
                 "--cutoff",
                 "3.25",
                 "--no-smooth-translation",
@@ -80,6 +82,7 @@ def test_cli_translates_flags_to_pipeline_config(monkeypatch, tmp_path):
     assert config.screen.distance_mul == 6.5
     assert config.screen.width_mul == 3.0
     assert config.screen.height_mul == 1.5
+    assert config.screen.focal_length == 812.5
     assert config.draw_screen is False
     assert config.draw_axis is True
     assert config.draw_bbox is True
@@ -101,6 +104,15 @@ def test_version_does_not_require_an_input(capsys):
 
     assert exc.value.code == 0
     assert capsys.readouterr().out.strip() == f"frame2frame {cli.__version__}"
+
+
+def test_doctor_does_not_require_or_initialize_an_input(monkeypatch):
+    called = []
+    monkeypatch.setattr(cli, "run_doctor", lambda: called.append("doctor") or 0)
+    monkeypatch.setattr(cli, "run", lambda config: (_ for _ in ()).throw(AssertionError(config)))
+
+    assert cli.main(["--doctor"]) == 0
+    assert called == ["doctor"]
 
 
 def test_empty_output_disables_video_writing():

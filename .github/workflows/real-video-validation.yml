@@ -1,0 +1,57 @@
+name: real-video-validation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: real-video-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FRAME2FRAME_CACHE: /tmp/frame2frame-cache
+  MPLCONFIGDIR: /tmp/matplotlib
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  validate:
+    name: MediaPipe + FIR operational receipt
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install the default application
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgl1 libglib2.0-0
+          python -m pip install --upgrade pip
+          python -m pip install .
+      - name: Check runtime readiness
+        run: python -m frame2frame --doctor
+      - name: Download one pinned and attributed public clip
+        run: python -m scripts.fetch_examples --download-only --limit 1
+      - name: Run the primary MediaPipe and FIR path
+        run: |
+          python -m scripts.validate_real_video \
+            --input examples/inputs/head-pose-face-detection-female.mp4 \
+            --output output/real-video-validation.mp4 \
+            --receipt output/real-video-validation.json
+      - name: Upload the receipt and processed example
+        if: ${{ always() && hashFiles('output/real-video-validation.json') != '' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: real-video-validation-${{ github.sha }}
+          path: |
+            output/real-video-validation.json
+            output/real-video-validation.mp4
+          if-no-files-found: error
+          retention-days: 7

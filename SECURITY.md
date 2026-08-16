@@ -38,3 +38,22 @@ private transfer method.
 
 Dependency-only problems should also be reported upstream, but please notify
 this project when a version constraint or mitigation is needed here.
+
+## Build and release trust
+
+- GitHub Actions workflows grant the repository token only the permissions each
+  workflow needs. External actions are pinned to full commit SHAs and kept
+  current through reviewed Dependabot pull requests.
+- Dependency review rejects pull requests that introduce runtime dependencies
+  with a known high- or critical-severity vulnerability. Repository
+  administrators should keep CodeQL default setup, Dependabot alerts and
+  security updates, private vulnerability reporting, secret scanning, and push
+  protection enabled; these settings are not all represented by files in the
+  repository.
+- CI builds and tests candidate wheel and source archives, verifies that a
+  release tag matches the project version, and records archive checksums. It
+  does not publish to PyPI or automatically create a GitHub release.
+- A `SHA256SUMS` file detects a changed download when compared with the copy on
+  the GitHub release. It is not a maintainer signature or independent build
+  provenance; use the tagged source and CI run when stronger audit evidence is
+  required.

@@ -77,7 +77,14 @@ source .venv/bin/activate              # Windows: .venv\Scripts\activate
 python -m pip install -U pip
 python -m pip install -e .
 frame2frame --help
+frame2frame --doctor
 ```
+
+`--doctor` checks the supported Python range, core binary imports, the exact
+MediaPipe Tasks API used by the primary backend, the plotting dependency, cache
+writability, the cached model when present, and optional `ffmpeg`. It does not
+download a model or open a camera. In a fresh environment, the MediaPipe import
+may spend several seconds initializing Matplotlib's local font cache.
 
 Process a video:
 
@@ -95,6 +102,12 @@ Render custom content and diagnostics:
 
 ```bash
 frame2frame -i clip.mp4 --texture screen.png --axis --bbox
+```
+
+Use calibrated camera intrinsics when they are available:
+
+```bash
+frame2frame -i clip.mp4 --focal-length-px 900
 ```
 
 The first MediaPipe run downloads a roughly 3.6 MB Face Landmarker asset into
@@ -140,6 +153,41 @@ The
 [architecture notes](https://github.com/jasperzhao05/frame2frame-virtual-screen/blob/main/docs/ARCHITECTURE.md)
 define coordinate conventions, temporal invariants, resource ownership, and
 extension boundaries.
+
+## Reliability and real-video evidence
+
+The fast reliability check repeats the complete synthetic **file** pipeline and
+gates exact frame conservation, the scripted reset-length dropout schedule with
+later observations, and repeated decoded-pixel stability:
+
+```bash
+python -m scripts.benchmark_pipeline --check
+```
+
+The longer local profile processes the same 1,800-frame source five times.
+Throughput is recorded but deliberately has no cross-machine pass threshold:
+
+```bash
+python -m scripts.benchmark_pipeline --extended --check
+```
+
+For the primary real-video path, a separate tool processes one attributed,
+checksum-pinned Intel clip with MediaPipe + FIR and writes a JSON receipt with
+the revision, full configuration, media hashes, decoded structure, frame
+conservation, fresh-detection coverage, and run timings:
+
+```bash
+python -m scripts.fetch_examples --download-only --limit 1
+python -m scripts.validate_real_video \
+  --input examples/inputs/head-pose-face-detection-female.mp4 \
+  --output output/real-video-validation.mp4 \
+  --receipt output/real-video-validation.json
+```
+
+These checks are operational evidence, not pose-accuracy, perceptual-quality,
+camera-latency, or production-SLO claims. See the
+[reliability protocol](https://github.com/jasperzhao05/frame2frame-virtual-screen/blob/main/docs/RELIABILITY.md)
+and [real-video receipt protocol](https://github.com/jasperzhao05/frame2frame-virtual-screen/blob/main/docs/VALIDATION.md).
 
 ## Deterministic filter-only reference
 
@@ -241,18 +289,19 @@ validation on the intended footage and hardware.
 
 ## Known limits
 
-Validation scope: automated tests cover software contracts, packaging, and
-synthetic temporal-filter regressions. They do not establish pose-estimation
-accuracy, perceptual stability across users, end-to-end real-time performance,
-or production readiness. The downloadable public clips are usage examples,
-not a curated evaluation dataset. This is a local research-oriented renderer,
-not a hardened desktop application, hosted service, biometric system, or
-safety system.
+Validation scope: automated tests cover software contracts and packaging; the
+reliability benchmark covers a declared synthetic file workload; real-video
+receipts cover operational checks on exact attributed clips. None establishes
+pose-estimation accuracy, perceptual stability across users, end-to-end
+real-time performance, or production readiness. The downloadable public clips
+are usage examples, not a curated evaluation dataset. This is a local
+research-oriented renderer, not a hardened desktop application, hosted
+service, biometric system, or safety system.
 
 - One face is tracked; identity association and multi-face rendering are not
   implemented.
-- Camera intrinsics default to `focal = max(width, height)` unless supplied from
-  Python. Face-size depth remains an approximation.
+- Camera intrinsics default to `focal = max(width, height)` unless supplied with
+  `--focal-length-px` or `ScreenConfig`. Face-size depth remains an approximation.
 - Rotation is filtered as Euler-angle streams; extreme poses near gimbal lock
   remain a limitation.
 - OpenCV writes constant-frame-rate video with a portability-oriented `mp4v`
@@ -277,12 +326,15 @@ frame2frame/
   video.py          rotation-aware video/webcam decode and encoding
   _media.py         internal atomic publication and optional audio remuxing
   _diagnostics.py   internal bounded, delay-aligned angle plots
+  _doctor.py        internal no-download, no-device runtime readiness checks
   pipeline.py       resource wiring and end-to-end stage orchestration
   cli.py            command-line interface
 scripts/
   make_demo.py              owned, synthetic pipeline demonstration
   benchmark_smoothing.py    deterministic model-free quality benchmark
+  benchmark_pipeline.py     repeated model-free file-pipeline reliability check
   fetch_examples.py         attributed, checksum-verified public examples
+  validate_real_video.py    evidence-bounded operational receipt for one clip
 tests/              unit, invariant, integration, packaging, and CLI tests
 ```
 

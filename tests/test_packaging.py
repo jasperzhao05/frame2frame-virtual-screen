@@ -34,6 +34,13 @@ def test_default_install_contains_default_backend_and_one_opencv_provider():
     assert "opencv-contrib-python-headless" not in names
 
 
+def test_every_mediapipe_install_path_excludes_the_unvalidated_major_release():
+    requirements = [item for item in _requirements() if item.name.lower() == "mediapipe"]
+
+    assert len(requirements) == 3
+    assert all(requirement.specifier == SpecifierSet(">=0.10.9,<1") for requirement in requirements)
+
+
 def test_no_published_requirement_adds_a_second_cv2_provider():
     names = {requirement.name.lower() for requirement in _requirements()}
 

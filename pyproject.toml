@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "frame2frame-virtual-screen"
-version = "0.3.0b1"
+version = "0.3.0b2"
 description = "Render a head-locked virtual screen in front of a face by tracking and smoothing head pose."
 readme = "README.md"
 requires-python = ">=3.9,<3.14"
@@ -37,16 +37,16 @@ dependencies = [
     # The CLI defaults to this backend, so a plain `pip install .` must provide
     # it. Keep the identically named extra below as a backwards-compatible
     # spelling for existing installation instructions.
-    "mediapipe>=0.10.9,<2",
+    "mediapipe>=0.10.9,<1",
 ]
 
 [project.optional-dependencies]
 # Backwards-compatible alias: MediaPipe is part of the default installation.
-mediapipe = ["mediapipe>=0.10.9,<2"]
+mediapipe = ["mediapipe>=0.10.9,<1"]
 # Both deep estimators use the default MediaPipe detector for their face crop.
 # Hopenet weights are fetched and hash-verified by frame2frame itself.
 hopenet = [
-    "mediapipe>=0.10.9,<2",
+    "mediapipe>=0.10.9,<1",
     "torch>=2.0,<3",
     "torchvision>=0.15,<1",
 ]
@@ -144,6 +144,7 @@ module = [
     "frame2frame.cli",
     "frame2frame.config",
     "frame2frame._diagnostics",
+    "frame2frame._doctor",
     "frame2frame._downloads",
     "frame2frame.filters",
     "frame2frame.geometry",
