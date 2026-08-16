@@ -5,8 +5,8 @@ type: software
 authors:
   - family-names: ZHAO
     given-names: Sibo
-version: 0.3.0b1
-date-released: 2026-08-13
+version: 0.3.0b2
+date-released: 2026-08-17
 repository-code: "https://github.com/jasperzhao05/frame2frame-virtual-screen"
 url: "https://github.com/jasperzhao05/frame2frame-virtual-screen"
 license: MIT

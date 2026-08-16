@@ -8,6 +8,17 @@ after install.
 
 ## Common CLI recipes
 
+Check the local runtime without downloading a model or opening a source:
+
+```bash
+frame2frame --doctor
+```
+
+Missing required imports or an unusable cache produce an error exit. A missing
+cached model or optional `ffmpeg` produces a warning and still exits zero.
+The first check in a fresh environment can take several seconds while
+MediaPipe's import path initializes Matplotlib's local font cache.
+
 Process a file and write the default angle diagnostics:
 
 ```bash
@@ -37,6 +48,15 @@ frame2frame --input clip.mp4 --output output/clip.mp4 --preserve-audio
 
 This last command requires a local `ffmpeg` executable on `PATH`. Audio
 preservation is not available for webcams or runs without a video output.
+
+Use a calibrated focal length, in pixels, when camera intrinsics are known:
+
+```bash
+frame2frame --input clip.mp4 --output output/clip.mp4 --focal-length-px 900
+```
+
+Without that flag, projection uses the larger decoded frame dimension as the
+focal-length approximation.
 
 ## Python configuration entry point
 

@@ -6,6 +6,47 @@ All notable changes are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0b2] - 2026-08-17
+
+### Added
+
+- A no-download, no-device `frame2frame --doctor` readiness report for the
+  supported Python runtime, core binary imports, primary MediaPipe Tasks API,
+  plotting dependency, cache, cached model, and optional `ffmpeg`.
+- A deterministic whole-file reliability benchmark covering frame
+  conservation, repeated decoded-pixel stability, a scripted reset-length
+  dropout schedule followed by later observations, and scoped throughput
+  reporting.
+- Focused projection checks for representative boundary combinations across
+  the declared normal operating envelope of yaw ±45° and pitch/roll ±30°.
+- An evidence-bounded real-video validation command and manually dispatched
+  GitHub workflow that record content identity, declared provenance metadata,
+  configuration, revision, decoded media facts, operational checks, and run
+  timings.
+- A CLI `--focal-length-px` option for known camera intrinsics.
+
+### Changed
+
+- The default MediaPipe dependency is capped below 1.0 after a clean install of
+  1.0.1 aborted the primary macOS graph during initialization; the validated
+  0.10.35 release remains the maintained path.
+- CI now exercises the runtime doctor and short pipeline reliability gate in
+  addition to the existing tests, type checks, packaging checks, and synthetic
+  smoothing benchmark.
+- GitHub Actions are pinned to immutable commit SHAs, checkout credentials are
+  not persisted, and Dependabot tracks reviewed action updates.
+- Reliability and validation documentation now separates directly measured
+  operational evidence from model accuracy, perceptual quality, latency SLO,
+  cross-machine performance, and production-readiness claims.
+
+### Security
+
+- Pull requests receive dependency review for newly introduced high- or
+  critical-severity runtime vulnerabilities.
+- Repository operations now use the dependency graph, Dependabot alerts and
+  security updates, private vulnerability reporting, secret scanning with push
+  protection, and CodeQL default analysis for Python and GitHub Actions.
+
 ## [0.3.0b1] - 2026-08-13
 
 ### Added
@@ -64,5 +105,6 @@ All notable changes are documented here. The format follows
 - Committed third-party processed footage and its derived angle plot. The
   repository now uses an owned synthetic visual and reproducible scripts.
 
-[Unreleased]: https://github.com/jasperzhao05/frame2frame-virtual-screen/compare/v0.3.0b1...HEAD
+[Unreleased]: https://github.com/jasperzhao05/frame2frame-virtual-screen/compare/v0.3.0b2...HEAD
+[0.3.0b2]: https://github.com/jasperzhao05/frame2frame-virtual-screen/releases/tag/v0.3.0b2
 [0.3.0b1]: https://github.com/jasperzhao05/frame2frame-virtual-screen/releases/tag/v0.3.0b1

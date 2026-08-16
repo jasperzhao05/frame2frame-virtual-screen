@@ -33,7 +33,9 @@ Run the core quality gate before opening a pull request:
 ruff check .
 ruff format --check .
 mypy
-pytest -q --cov=frame2frame --cov-report=term-missing
+python -m pytest -q -m "not integration" --cov=frame2frame --cov-report=term-missing
+python -m scripts.benchmark_smoothing --check
+python -m scripts.benchmark_pipeline --check
 ```
 
 Ruff enforces a McCabe complexity ceiling of 10. Treat that limit as a design
@@ -42,10 +44,11 @@ silencing the check or mechanically fragmenting one control flow.
 
 ### Filtering, timing, rendering, or pipeline behavior
 
-Run the deterministic benchmark and the short synthetic end-to-end demo:
+Run both deterministic benchmarks and the short synthetic end-to-end demo:
 
 ```bash
 python -m scripts.benchmark_smoothing --check
+python -m scripts.benchmark_pipeline --check
 python -m scripts.make_demo --frames 36 --input output/contribution-input.mp4 --out output/contribution-demo.mp4 --plot ""
 ```
 
@@ -53,6 +56,22 @@ Generated videos, plots, weights, and downloaded examples must remain
 untracked. Report benchmark changes with the exact command, seed, Python
 version, machine, and before/after values. Do not present throughput from
 different hardware as a regression.
+
+### Real-video or pose-backend behavior
+
+Run `frame2frame --doctor`, process an attributed or owned clip, and retain an
+operational receipt:
+
+```bash
+python -m scripts.validate_real_video \
+  --input examples/inputs/head-pose-face-detection-female.mp4 \
+  --output output/real-video-validation.mp4 \
+  --receipt output/real-video-validation.json
+```
+
+Use a clean commit for publishable evidence. Treat fresh-detection coverage and
+timings as run facts, not accuracy, perceptual-quality, latency-SLO, or
+production-readiness evidence. See `docs/VALIDATION.md` for provenance rules.
 
 ### Packaging or dependency changes
 
@@ -89,17 +108,17 @@ contracts cross module boundaries.
 
 | Area changed | Focused validation | Additional contract check |
 |---|---|---|
-| Configuration or CLI | `pytest -q tests/test_cli.py tests/test_config.py` | `python -m frame2frame --help` |
-| Filters | `pytest -q tests/test_filters.py tests/test_pipeline_timing.py` | smoothing benchmark |
-| Geometry | `pytest -q tests/test_geometry.py` | render tests and synthetic demo |
-| Texture or compositing | `pytest -q tests/test_textures.py tests/test_render.py` | geometry tests and synthetic demo |
-| Pipeline timing or dropout | `pytest -q tests/test_pipeline_timing.py tests/test_pipeline_diagnostics.py` | smoke tests |
-| Resource cleanup or publication | `pytest -q tests/test_pipeline_resources.py tests/test_pipeline_publish.py` | failure-path review |
-| Video reader/writer or audio | `pytest -q tests/test_video_io.py tests/test_audio.py` | `pytest -q -m integration` when applicable |
-| Pose adapters or registry | `pytest -q tests/test_pose_helpers.py` | smoke test with a scripted estimator |
-| Dependencies or metadata | `pytest -q tests/test_packaging.py` | build, Twine, and clean installs |
-| Benchmark protocol | `pytest -q tests/test_benchmark.py` | benchmark `--check` and schema review |
-| README or distributed docs | `pytest -q tests/test_packaging.py` | build and Twine rendering check |
+| Configuration or CLI | `python -m pytest -q tests/test_cli.py tests/test_config.py tests/test_doctor.py` | `python -m frame2frame --help` and `--doctor` |
+| Filters | `python -m pytest -q tests/test_filters.py tests/test_pipeline_timing.py` | smoothing benchmark |
+| Geometry | `python -m pytest -q tests/test_geometry.py` | render tests, synthetic demo, and pipeline benchmark |
+| Texture or compositing | `python -m pytest -q tests/test_textures.py tests/test_render.py` | geometry tests and synthetic demo |
+| Pipeline timing or dropout | `python -m pytest -q tests/test_pipeline_timing.py tests/test_pipeline_diagnostics.py` | smoke tests and pipeline benchmark |
+| Resource cleanup or publication | `python -m pytest -q tests/test_pipeline_resources.py tests/test_pipeline_publish.py` | failure-path review |
+| Video reader/writer or audio | `python -m pytest -q tests/test_video_io.py tests/test_audio.py` | `python -m pytest -q -m integration` when applicable |
+| Pose adapters or registry | `python -m pytest -q tests/test_pose_helpers.py` | scripted smoke test and attributed real-video receipt |
+| Dependencies or metadata | `python -m pytest -q tests/test_packaging.py` | build, Twine, and clean installs |
+| Benchmark protocol | `python -m pytest -q tests/test_benchmark.py tests/test_pipeline_benchmark.py` | both benchmark `--check` commands and schema review |
+| README or distributed docs | `python -m pytest -q tests/test_packaging.py` | build and Twine rendering check |
 
 ## Pull-request checklist
 
@@ -153,6 +172,12 @@ release. If the protocol must change:
 The benchmark's throughput loop updates all six filtered channels: three
 angles, face-center x/y, and face size. Quality and latency values are
 deterministic; wall-clock speed is not.
+
+`scripts/benchmark_pipeline.py` protects a separate set of whole-file
+contracts. Keep its synthetic pose envelope, dropout schedule, decoded-pixel
+digest rule, and frame-conservation checks stable within a minor release. Its
+reported throughput has no pass/fail floor and must not be labeled as backend
+FPS or camera latency. See `docs/RELIABILITY.md` before changing that protocol.
 
 ## Test readability
 
