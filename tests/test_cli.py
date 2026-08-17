@@ -89,6 +89,13 @@ def test_cli_translates_flags_to_pipeline_config(monkeypatch, tmp_path):
     assert config.plot_path is None
 
 
+def test_cli_screen_defaults_match_the_configuration_contract():
+    args = cli.build_parser().parse_args(["--input", "input.mp4"])
+    config = cli.config_from_args(args)
+
+    assert config.screen == cli.ScreenConfig()
+
+
 def test_cli_requires_exactly_one_input_source():
     parser = cli.build_parser()
 

@@ -36,14 +36,15 @@ deterministic tests, and a reproducible model-free benchmark.
 
 ### Real-video usage example
 
-![Intel sample video beside output from the primary MediaPipe and FIR path](docs/demo-mediapipe.gif)
+![Intel sample turn from frontal to image-right beside corrected MediaPipe and FIR output](docs/demo-mediapipe.gif)
 
 *Source: Intel IoT DevKit
 [`head-pose-face-detection-male.mp4`](https://github.com/intel-iot-devkit/sample-videos/raw/master/head-pose-face-detection-male.mp4),
 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The excerpt was
 trimmed, muted, re-encoded, labelled, and combined with a derived output that
-adds the project-owned virtual-screen texture and border. This is a usage
-example, not evaluation or accuracy evidence.*
+adds the project-owned virtual-screen texture and border. The excerpt includes
+a frontal-to-image-right turn so the yaw direction and perspective are visible.
+This is a usage example, not evaluation or accuracy evidence.*
 
 The right pane uses the default `mediapipe` backend followed by FIR smoothing.
 MediaPipe is the primary maintained real-video path; that designation is a

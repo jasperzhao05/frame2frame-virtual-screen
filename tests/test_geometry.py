@@ -25,7 +25,13 @@ def test_head_rotation_is_orthonormal_and_uses_pose_convention():
     r = g.head_rotation(17, -9, 33)
     assert np.allclose(r @ r.T, np.eye(3), atol=1e-9)
     assert np.isclose(np.linalg.det(r), 1.0)
-    assert np.allclose(r @ g.Z_AXIS, g.head_forward(17, -9), atol=1e-9)
+    assert np.allclose(r @ -g.Z_AXIS, g.head_forward(17, -9), atol=1e-9)
+
+
+def test_head_rotation_reconstructs_the_converted_mediapipe_matrix():
+    converted_matrix = g.euler_to_rotation(22, -11, 7)
+
+    assert np.allclose(g.head_rotation(22, 11, 7), converted_matrix, atol=1e-9)
 
 
 def test_head_forward_angle_signs_match_the_public_pose_contract():
@@ -58,7 +64,57 @@ def test_screen_sits_in_front_of_face():
             face, yaw, pitch, roll, distance_world=30, screen_w_px=200, screen_h_px=100, k=k
         )
         assert corners.shape == (4, 3)
-        assert corners[:, 2].mean() > face[2]
+        assert corners[:, 2].mean() < face[2]
+
+
+@pytest.mark.parametrize(
+    ("yaw", "closer_side"),
+    [(25, "right"), (-25, "left")],
+)
+def test_yaw_places_the_correct_screen_edge_closer_to_the_camera(yaw, closer_side):
+    k = g.camera_matrix(800, 320, 240)
+    face = g.deproject(320, 240, 500.0, k)
+    corners = g.gaze_plane_corners(
+        face, yaw, 0, 0, distance_world=30, screen_w_px=200, screen_h_px=100, k=k
+    )
+
+    left_depth = corners[[0, 3], 2].mean()
+    right_depth = corners[[1, 2], 2].mean()
+    quad = g.project(corners, k)
+    left_height = np.linalg.norm(quad[3] - quad[0])
+    right_height = np.linalg.norm(quad[2] - quad[1])
+
+    if closer_side == "right":
+        assert right_depth < left_depth
+        assert right_height > left_height
+    else:
+        assert left_depth < right_depth
+        assert left_height > right_height
+
+
+@pytest.mark.parametrize(
+    ("pitch", "closer_edge"),
+    [(20, "bottom"), (-20, "top")],
+)
+def test_pitch_places_the_correct_screen_edge_closer_to_the_camera(pitch, closer_edge):
+    k = g.camera_matrix(800, 320, 240)
+    face = g.deproject(320, 240, 500.0, k)
+    corners = g.gaze_plane_corners(
+        face, 0, pitch, 0, distance_world=30, screen_w_px=200, screen_h_px=100, k=k
+    )
+
+    top_depth = corners[[0, 1], 2].mean()
+    bottom_depth = corners[[2, 3], 2].mean()
+    quad = g.project(corners, k)
+    top_width = np.linalg.norm(quad[1] - quad[0])
+    bottom_width = np.linalg.norm(quad[2] - quad[3])
+
+    if closer_edge == "bottom":
+        assert bottom_depth < top_depth
+        assert bottom_width > top_width
+    else:
+        assert top_depth < bottom_depth
+        assert top_width > bottom_width
 
 
 def test_screen_basis_and_center_come_from_one_rigid_head_rotation():
@@ -91,7 +147,7 @@ def test_screen_basis_and_center_come_from_one_rigid_head_rotation():
         rotation = g.head_rotation(yaw, pitch, roll)
         assert np.allclose(u, rotation @ g.X_AXIS)
         assert np.allclose(v, rotation @ g.Y_AXIS)
-        assert np.dot(normal, g.head_forward(yaw, pitch)) == pytest.approx(1.0)
+        assert np.dot(-normal, g.head_forward(yaw, pitch)) == pytest.approx(1.0)
         assert np.allclose(
             corners.mean(axis=0),
             face + g.head_forward(yaw, pitch) * 30,
@@ -121,7 +177,7 @@ def test_corner_ordering_tl_tr_br_bl():
     assert tl[1] < bl[1] and tr[1] < br[1]  # top corners above bottom corners
 
 
-def test_head_forward_is_unit_and_points_ahead():
+def test_head_forward_is_unit_and_points_toward_camera_at_neutral_pose():
     f = g.head_forward(0, 0)
     assert np.allclose(np.linalg.norm(f), 1.0)
-    assert f[2] > 0  # looking down +Z when facing the camera
+    assert f[2] < 0

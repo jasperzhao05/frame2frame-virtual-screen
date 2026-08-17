@@ -148,12 +148,15 @@ documented convention.
 The renderer reconstructs that convention with one rigid rotation:
 
 ```text
-R_head = Rx(pitch) @ Ry(-yaw) @ Rz(roll)
+R_head = Rx(-pitch) @ Ry(yaw) @ Rz(roll)
+forward = R_head @ (0, 0, -1)
 ```
 
-The forward ray, screen right/down basis, and debug axes all come from the
-columns of this same matrix. Backend-specific sign changes belong in adapters,
-never in screen geometry.
+At neutral pose the person faces the camera, so the forward ray is `-Z`, not
+the camera's `+Z` viewing direction. The screen right/down basis comes from the
+first two columns of the same matrix, while the debug forward axis uses the ray
+above. This keeps screen placement and perspective foreshortening consistent.
+Backend-specific sign changes belong in adapters, never in screen geometry.
 
 ## Temporal stabilization
 

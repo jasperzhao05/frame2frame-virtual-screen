@@ -23,6 +23,8 @@ from frame2frame.pose.base import FaceObservation, HeadPose
 from frame2frame.pose.scripted import ScriptedEstimator
 from frame2frame.video import VideoWriter
 
+_HORIZONTAL_EXCURSION = 0.18
+
 
 def _background(width: int, height: int) -> np.ndarray:
     yy = np.linspace(0, 1, height)[:, None]
@@ -45,10 +47,17 @@ def synthetic_clip(
         for frame_index in range(frames):
             image = _background(width, height)
             phase = frame_index / frames
-            cx = int(width * 0.5 + width * 0.22 * np.sin(2 * np.pi * phase))
+            horizontal_motion = np.sin(2 * np.pi * phase)
+            cx = int(width * (0.5 + _HORIZONTAL_EXCURSION * horizontal_motion))
             cy = int(height * 0.5 + height * 0.08 * np.sin(4 * np.pi * phase))
             cv2.circle(image, (cx, cy), radius, (200, 180, 160), -1)
             cv2.circle(image, (cx, cy), radius, (60, 60, 60), 2)
+            # A small profile marker makes the scripted look direction visible.
+            # Positive image-x is right; the pose contract below therefore uses
+            # negative yaw for the same motion.
+            profile_tip = (cx + int(radius * 1.15 * horizontal_motion), cy)
+            cv2.line(image, (cx, cy), profile_tip, (60, 60, 60), 3)
+            cv2.circle(image, profile_tip, max(2, radius // 12), (60, 60, 60), -1)
             writer.write(image)
     return path
 
@@ -68,11 +77,13 @@ def _observation_source(
 
     def observation_at(frame_index: int, _frame: np.ndarray) -> FaceObservation:
         phase = frame_index / frames
-        cx = width * 0.5 + width * 0.22 * np.sin(2 * np.pi * phase)
+        cx = width * (0.5 + _HORIZONTAL_EXCURSION * np.sin(2 * np.pi * phase))
         cy = height * 0.5 + height * 0.08 * np.sin(4 * np.pi * phase)
         clean_angles = np.array(
             [
-                30 * np.sin(2 * np.pi * phase),
+                # Positive yaw looks image-left, so negate the shared motion
+                # signal to make the face look toward its lateral excursion.
+                -30 * np.sin(2 * np.pi * phase),
                 12 * np.sin(4 * np.pi * phase),
                 8 * np.sin(2 * np.pi * phase + 1.0),
             ]

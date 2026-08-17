@@ -13,6 +13,7 @@ from .pose import available_backends
 
 
 def build_parser() -> argparse.ArgumentParser:
+    screen_defaults = ScreenConfig()
     parser = argparse.ArgumentParser(
         prog="frame2frame",
         description="Render a head-locked virtual screen from a video or webcam.",
@@ -60,14 +61,20 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--screen-distance",
         type=float,
-        default=5.0,
+        default=screen_defaults.distance_mul,
         help="screen distance as a multiple of the configured depth scale",
     )
     parser.add_argument(
-        "--screen-width", type=float, default=4.0, help="screen width in face-size units"
+        "--screen-width",
+        type=float,
+        default=screen_defaults.width_mul,
+        help="screen width in face-size units",
     )
     parser.add_argument(
-        "--screen-height", type=float, default=2.0, help="screen height in face-size units"
+        "--screen-height",
+        type=float,
+        default=screen_defaults.height_mul,
+        help="screen height in face-size units",
     )
     parser.add_argument(
         "--focal-length-px",

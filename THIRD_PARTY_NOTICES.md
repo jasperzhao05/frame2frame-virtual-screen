@@ -92,14 +92,13 @@ license, and indicate that overlays/re-encoding modified the source.
 [`head-pose-face-detection-male.mp4`](https://github.com/intel-iot-devkit/sample-videos/raw/master/head-pose-face-detection-male.mp4),
 licensed under
 [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/).
-It uses source time 00:06–00:12. The excerpt was trimmed, muted, re-encoded,
+It uses source time 02:02–02:08. The excerpt was trimmed, muted, re-encoded,
 labelled, reduced to 10 fps and 128 colours, and placed beside a derived output
 with the project-owned virtual-screen texture and border. The right pane was
-produced by the default MediaPipe backend and FIR filter. Its six-second segment
-was selected from the first 72 source-rate frames of a 96-frame run in which all
-frames had detections; the final GIF contains 60 frames at 10 fps. This asset is
-a usage example, not backend evaluation, accuracy evidence, or a general
-performance claim.
+produced by the default MediaPipe backend and FIR filter. The six-second segment
+shows a frontal-to-image-right turn so the yaw direction is visible; the final
+GIF contains 60 frames at 10 fps. This asset is a usage example, not backend
+evaluation, accuracy evidence, or a general performance claim.
 
 ## Project-owned demo assets
 

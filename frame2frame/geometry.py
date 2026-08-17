@@ -64,21 +64,19 @@ def deproject(px: float, py: float, depth: float, k: ArrayLike) -> np.ndarray:
 
 
 def head_rotation(yaw: float, pitch: float, roll: float) -> np.ndarray:
-    """Renderer rotation for the documented head-pose convention.
+    """Map the neutral head basis into the OpenCV-like camera frame.
 
-    This is deliberately separate from :func:`euler_to_rotation`, whose order
-    is the inverse contract used to decode MediaPipe transformation matrices.
-    Here positive yaw looks image-left, positive pitch looks up, and positive
-    roll tilts the head's right axis image-down.  The screen basis and gaze ray
-    must come from this same rotation so the plane normal cannot diverge from
-    the direction in which it is placed.
+    At neutral pose, local ``+X`` points image-right, local ``+Y`` points
+    image-down, and the face looks along local ``-Z`` toward the camera.
+    Positive yaw looks image-left, positive pitch looks up, and positive roll
+    tilts the local right axis image-down.
     """
-    return euler_to_rotation(-yaw, pitch, roll)
+    return euler_to_rotation(yaw, -pitch, roll)
 
 
 def head_forward(yaw: float, pitch: float) -> np.ndarray:
     """Unit ray the head looks along, in camera space."""
-    return head_rotation(yaw, pitch, 0.0) @ Z_AXIS
+    return head_rotation(yaw, pitch, 0.0) @ -Z_AXIS
 
 
 def gaze_plane_corners(
@@ -107,8 +105,9 @@ def gaze_plane_corners(
     half_w = (screen_w_px / 2.0) / focal * zs
     half_h = (screen_h_px / 2.0) / focal * zs
 
-    # The basis and placement ray share one renderer rotation.  In particular,
-    # cross(u, v) is the same head-forward direction used for ``center``.
+    # The basis and placement ray share one renderer rotation. With texture
+    # coordinates ordered right then down, cross(u, v) points away from the
+    # visible face of the plane, so the gaze direction is -cross(u, v).
     r = head_rotation(yaw, pitch, roll)
     u = r @ X_AXIS
     v = r @ Y_AXIS

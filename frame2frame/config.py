@@ -117,7 +117,7 @@ def _color_channel(value: object) -> bool:
 
 @dataclass
 class ScreenConfig:
-    distance_mul: float = 5.0  # screen distance, in depth_scale units
+    distance_mul: float = 2.0  # screen distance, in depth_scale units
     width_mul: float = 4.0  # screen width, in face-size units
     height_mul: float = 2.0  # screen height, in face-size units
     depth_scale: float = 6.0  # face depth = focal * depth_scale / face_size

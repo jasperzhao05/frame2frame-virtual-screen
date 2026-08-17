@@ -167,7 +167,7 @@ video but does not roll back the newly written plot.
 
 | Field | Default | Meaning |
 |---|---:|---|
-| `distance_mul` | `5.0` | Plane distance as a multiple of `depth_scale` |
+| `distance_mul` | `2.0` | Plane distance as a multiple of `depth_scale` |
 | `width_mul` | `4.0` | Screen width in face-size units |
 | `height_mul` | `2.0` | Screen height in face-size units |
 | `depth_scale` | `6.0` | Face-depth scale used by the approximate camera model |

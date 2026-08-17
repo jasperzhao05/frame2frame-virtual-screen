@@ -98,6 +98,20 @@ def test_asymmetric_texture_keeps_readable_left_to_right_orientation():
     assert frame[40, 85, 1] > frame[40, 85, 2]  # green remains on the right
 
 
+def test_pose_axis_uses_the_forward_gaze_direction(monkeypatch):
+    lines = []
+    monkeypatch.setattr(
+        render.cv2,
+        "line",
+        lambda _frame, start, end, color, thickness: lines.append((start, end, color, thickness)),
+    )
+
+    render.draw_pose_axis(np.zeros((100, 100, 3), np.uint8), 25, 0, 0, (50, 50), 20)
+
+    blue_axis = next(line for line in lines if line[2] == (255, 0, 0))
+    assert blue_axis[1][0] < blue_axis[0][0]
+
+
 @pytest.mark.parametrize(
     ("yaw", "pitch", "roll"),
     [

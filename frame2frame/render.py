@@ -45,11 +45,11 @@ def draw_pose_axis(
     rotation = geometry.head_rotation(yaw, pitch, roll)
     x_axis = rotation @ geometry.X_AXIS
     y_axis = rotation @ geometry.Y_AXIS
-    z_axis = rotation @ geometry.Z_AXIS
+    forward_axis = geometry.head_forward(yaw, pitch)
 
     x1, y1 = np.asarray(center) + size * x_axis[:2]
     x2, y2 = np.asarray(center) + size * y_axis[:2]
-    x3, y3 = np.asarray(center) + size * z_axis[:2]
+    x3, y3 = np.asarray(center) + size * forward_axis[:2]
 
     o = (int(tdx), int(tdy))
     cv2.line(frame, o, (int(x1), int(y1)), (0, 0, 255), 2)
