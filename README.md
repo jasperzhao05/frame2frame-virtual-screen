@@ -1,28 +1,48 @@
 # frame2frame
 
-**A head-orientation-driven virtual screen designed to reduce visible jitter.**
+**A head-pose-driven virtual-screen renderer for monocular video and live camera streams.**
 
 [![CI](https://github.com/jasperzhao05/frame2frame-virtual-screen/actions/workflows/ci.yml/badge.svg)](https://github.com/jasperzhao05/frame2frame-virtual-screen/actions/workflows/ci.yml)
 [![Python 3.9–3.13](https://img.shields.io/badge/python-3.9--3.13-3776AB)](https://www.python.org/)
 [![MIT](https://img.shields.io/badge/license-MIT-2ea44f)](https://github.com/jasperzhao05/frame2frame-virtual-screen/blob/main/LICENSE)
 
-`frame2frame` estimates one person's head orientation, stabilizes the noisy
-motion signal, projects a 3D plane in front of the face, and composites content
-onto that plane. The rendering follows estimated head orientation while the
-temporal path is designed to reduce visible detector jitter.
+`frame2frame` converts one person's estimated head pose into a textured 3D
+display that moves and turns with the head. It maintains a coherent temporal
+state, places a plane along the estimated forward direction, projects that
+plane through a camera model, and composites the result into each frame.
 
-![Same synthetic pose stream rendered without smoothing and with delay-aligned FIR smoothing](docs/demo-comparison.gif)
+The central task is virtual-screen rendering. Temporal stabilization, delay
+alignment, and dropout recovery are supporting mechanisms that keep the
+generated screen coherent when pose observations are noisy or briefly missing.
 
-*Watch the yellow border: both panes use the same project-authored clip,
-scripted pose stream, and seed. Only the temporal filter changes. This
-comparison runs no ML model and contains no person footage.*
+This is an AR-style rendering prototype, not an AR-headset integration: it
+operates on ordinary video or webcam frames and does not use headset telemetry,
+eye gaze, SLAM, or world anchors.
 
-On a separately defined, fixed synthetic workload, `scripts.benchmark_smoothing`
-measures a **71.2%** reduction in residual pose-signal jitter RMS with FIR. It
-does not measure head-pose backend accuracy, real-footage performance, or
-end-to-end latency.
+## Virtual screen in motion
 
-### Real-scene stress example
+![Actual MediaPipe and FIR pipeline output on an outdoor video of a person wearing Rokid glasses](docs/demo-rokid-outdoor.gif)
+
+*Actual default-pipeline output from a 4.43-second continuous outdoor excerpt,
+played forward and backward as an 8.8-second preview. One fixed crop and a
+global light adjustment are applied before inference; there is no per-frame
+reframing or manual screen keyframing. MediaPipe produced fresh pose
+observations for 132 of 133 source frames (99.25%).*
+
+*The glasses are visual context; the colored plane is a `frame2frame` software
+overlay, not Rokid device output or hardware integration. Source footage:
+BooredAtWork,
+[“Rokid Glasses 2025 – Next Level Augmented Reality Experience!”](https://www.youtube.com/watch?v=abE88Vve0o4)
+([Commons mirror](https://commons.wikimedia.org/wiki/File:Video_of_smart_glasses_%E2%80%93_the_Rokid_Glasses_in_2025_(with_augmented_reality).webm)),
+[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). The source review
+disclosed sponsorship by Rokid; this independent project has no affiliation
+with or endorsement by Rokid or BooredAtWork. This is per-clip runtime behavior,
+not general robustness, pose accuracy, hardware integration, or latency
+evidence.*
+
+## Supporting evidence
+
+### Recovery in a changing real scene
 
 ![Fixed crop from an Intel driver-action scene beside MediaPipe and FIR output in a changing car interior](docs/demo-mediapipe.gif)
 
@@ -43,11 +63,19 @@ is applied before inference; there is no per-frame reframing.*
 MediaPipe is the primary maintained real-video path; that designation is a
 support choice, not a claim that it is the most accurate backend.
 
-This repository is an independently rebuilt and maintained open-source edition
-of a system originally developed during an internship. It does not claim
-implementation equivalence to, or endorsement by, the employer. The rebuilt
-edition is an installable package with interchangeable pose backends,
-deterministic tests, and a reproducible model-free benchmark.
+### Controlled temporal stabilization
+
+![Same synthetic pose stream rendered without smoothing and with delay-aligned FIR smoothing](docs/demo-comparison.gif)
+
+*This controlled comparison isolates one supporting subsystem. Watch the
+yellow border: both panes use the same project-authored clip, scripted pose
+stream, renderer, and seed. Only the temporal filter changes. It runs no ML
+model and contains no person footage.*
+
+On a separately defined, fixed synthetic workload, `scripts.benchmark_smoothing`
+measures a **71.2%** reduction in residual pose-signal jitter RMS with FIR. It
+does not measure head-pose backend accuracy, real-footage performance, or
+end-to-end latency.
 
 Rebuild the synthetic comparison from a source checkout with local `ffmpeg`:
 
@@ -55,20 +83,31 @@ Rebuild the synthetic comparison from a source checkout with local `ffmpeg`:
 python -m scripts.make_showcase --out docs/demo-comparison.gif
 ```
 
-## Why it is interesting
+This repository is an independently rebuilt and maintained open-source edition
+of a system originally developed during an internship. It does not claim
+implementation equivalence to, or endorsement by, the employer. The rebuilt
+edition is an installable package with interchangeable pose backends,
+deterministic tests, and a reproducible model-free benchmark.
 
-Drawing a quadrilateral is easy. Keeping it perceptually still is not:
+## What makes virtual-screen rendering difficult
 
-- a one-degree pose error can become several pixels of screen movement;
-- independently smoothing yaw, pitch, roll, face center, and face size can
-  misalign the rendered plane;
-- a linear-phase filter attenuates jitter but introduces a known group delay;
-- rounding projected corners too early reintroduces visible pixel stepping;
-- phone rotation metadata, tracking dropouts, and model downloads all affect
-  whether an otherwise-correct demo works end to end.
+A plausible virtual screen is a coupled geometry-and-time problem. The system
+must:
 
-The implementation treats those as one temporal rendering problem rather than
-as isolated computer-vision steps.
+- convert backend-specific pose estimates into one renderer coordinate
+  convention;
+- advance orientation, face center, and apparent scale on the same timeline;
+- place and perspective-project a head-relative plane without flipping or
+  mirroring its content;
+- preserve subpixel geometry so small pose changes do not become visible corner
+  stepping;
+- keep every source frame in order while holding, fading, resetting, and
+  reacquiring through detection gaps; and
+- suppress observation noise without pairing the screen with the wrong moment
+  in the video.
+
+Together, these constraints preserve geometric and temporal coherence under
+imperfect observations.
 
 ## Quick start from a source checkout
 
@@ -125,32 +164,22 @@ For configuration recipes, Python-only options, output ownership, timestamps,
 and audio behavior, see the
 [usage guide](https://github.com/jasperzhao05/frame2frame-virtual-screen/blob/main/docs/USAGE.md).
 
-## Pipeline
+## Rendering pipeline
 
 ### System overview
 
-![System overview from pose signal through stabilization and projection](docs/demo-synthetic.svg)
-
-```text
-video/webcam
-    │
-    ▼
-rotation-aware decode ──▶ head pose ──▶ temporal filter
-                                             │
-                                             ▼
-output ◀── composite ◀── perspective warp ◀── head-oriented 3D plane
-```
+![Per-frame rendering pipeline from rotation-aware decode through pose estimation, temporal alignment, 3D plane projection, and compositing](docs/demo-synthetic.svg)
 
 1. **Decode** — OpenCV reads the source; phone rotation metadata is applied
    explicitly and the first decoded frame establishes the real output size.
 2. **Estimate** — the default MediaPipe Tasks backend reads the facial
    transformation matrix and converts it to the renderer's camera coordinates.
    Hopenet and 6DRepNet are optional research adapters.
-3. **Stabilize** — one temporal path advances rotation, face center, and face
-   size together. The default FIR has constant group delay; One Euro is the
-   lower-filter-lag live alternative.
-4. **Project** — a head-oriented plane is placed along the forward ray and
-   projected through a pinhole camera model.
+3. **Track & align** — one temporal state advances rotation, face center, and
+   face size together, while hold, fade, reset, and reacquisition handle
+   missing observations. FIR and One Euro provide the smoothing policies.
+4. **Build & project** — a head-oriented plane is placed along the forward ray
+   and projected through a pinhole camera model.
 5. **Composite** — the texture is warped with subpixel corners and alpha-blended
    without implicit mirroring. Short detection gaps hold and then fade the
    screen instead of flashing it off immediately.

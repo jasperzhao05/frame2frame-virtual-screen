@@ -6,6 +6,19 @@ All notable changes are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Reframed the README around head-pose-driven virtual-screen rendering, with
+  temporal stabilization presented as one supporting subsystem rather than the
+  project's identity.
+- Added an attributed outdoor AR-use-case hero produced by the default
+  MediaPipe and FIR pipeline, with exact per-clip scope and licensing notes.
+- Retained the car-interior recovery example and controlled synthetic
+  comparison as supporting evidence rather than competing hero demonstrations.
+- Replaced the stylized smoothing poster with a data-flow diagram covering
+  decode, pose estimation, temporal alignment, 3D plane construction, texture
+  input, and frame compositing.
+
 ### Fixed
 
 - Corrected the neutral face-forward direction from camera `+Z` to `-Z`, so
