@@ -22,20 +22,24 @@ measures a **71.2%** reduction in residual pose-signal jitter RMS with FIR. It
 does not measure head-pose backend accuracy, real-footage performance, or
 end-to-end latency.
 
-### Real-video usage example
+### Real-scene stress example
 
-![Intel female sample turning from frontal to image-right and back beside MediaPipe and FIR output](docs/demo-mediapipe.gif)
+![Fixed crop from an Intel driver-action scene beside MediaPipe and FIR output in a changing car interior](docs/demo-mediapipe.gif)
 
-*Source: Intel IoT DevKit
-[`head-pose-face-detection-female.mp4`](https://github.com/intel-iot-devkit/sample-videos/raw/master/head-pose-face-detection-female.mp4),
-[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The excerpt was
-trimmed, muted, re-encoded, labeled, and combined with a derived output that
-adds the project-owned virtual-screen texture and border. The excerpt turns
-from frontal to image-right and back, keeping yaw direction and perspective
-visible.
-This is a usage example, not evaluation or accuracy evidence.*
+*One continuous 15-second excerpt, shown at 2x playback. Source: Intel IoT
+DevKit
+[`driver-action-recognition.mp4`](https://github.com/intel-iot-devkit/sample-videos/raw/master/driver-action-recognition.mp4),
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). A single fixed crop
+is applied before inference; there is no per-frame reframing.*
 
-The right pane uses the default `mediapipe` backend followed by FIR smoothing.
+- **Natural variation:** changing background and illumination, continuous
+  yaw/pitch motion, and small body translations.
+- **Graceful recovery:** one 0.83-second observation gap is left intact; stale
+  geometry clears and the next fresh segment reacquires the plane.
+- **Measured scope:** 422 of 450 source frames produced fresh MediaPipe
+  observations (93.8%); the right pane uses the default FIR path. This is
+  per-clip behavior, not backend accuracy or general robustness.
+
 MediaPipe is the primary maintained real-video path; that designation is a
 support choice, not a claim that it is the most accurate backend.
 

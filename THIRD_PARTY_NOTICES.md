@@ -82,23 +82,28 @@ Verified source digests:
 | `head-pose-face-detection-female-and-male.mp4` | 16,788,193 | `650166430c4bf9ddc470ac17a86d1fcbd6d76c64e60ed73675fdc6b3e3d3af38` |
 | `face-demographics-walking.mp4` | 6,406,124 | `91af68da819a9c0caab06c6c21414e6ebdb378ff28fee90e1f937165bc1007c6` |
 | `face-demographics-walking-and-pause.mp4` | 9,406,029 | `d88ab9aa03634f66f8815db3dc940e1cdd80b098440effb20882e814fd206bf5` |
+| `driver-action-recognition.mp4` | 53,804,027 | `fd24e652c92a5759127aa9c7f23fea63d73aebb4bcea72763abe72ef06a20cf0` |
 
 When publishing a derived clip, retain this attribution, link the CC BY 4.0
 license, and indicate that overlays/re-encoding modified the source.
 
-### Committed derived usage example
+### Committed derived stress example
 
 `docs/demo-mediapipe.gif` derives from Intel IoT DevKit
-[`head-pose-face-detection-female.mp4`](https://github.com/intel-iot-devkit/sample-videos/raw/master/head-pose-face-detection-female.mp4),
+[`driver-action-recognition.mp4`](https://github.com/intel-iot-devkit/sample-videos/raw/master/driver-action-recognition.mp4),
 licensed under
 [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/).
-It uses source time 02:03.5–02:10.0. The excerpt was trimmed, muted, re-encoded,
-labeled, reduced to 7 fps and 96 colours, and placed beside a derived output
-with the project-owned virtual-screen texture and border. The right pane was
-produced by the default MediaPipe backend and FIR filter. The segment shows a
-frontal-to-image-right turn and return while keeping the rendered plane visible;
-the final GIF contains 46 frames at 7 fps. This asset is a usage example, not
-backend evaluation, accuracy evidence, or a general performance claim.
+It uses source time 00:00.0–00:15.0. Before inference, the source receives one
+fixed 960×720 crop at `(x=120, y=0)` and is scaled to 768×576; no per-frame
+reframing is used. The excerpt is muted, labeled, shown at 2x playback, and
+placed beside a derived output with the project-owned virtual-screen texture
+and border. The right pane was produced by the default MediaPipe backend and
+FIR filter, with fresh observations on 422 of 450 source frames (93.8%). The
+longest continuous observation gap is 25 frames (0.83 seconds) and is retained
+to show the configured clear-and-reacquire behavior. The final GIF contains 38
+frames at 5 fps and 64 colors. This asset is a real-scene stress example, not a
+product use case, backend evaluation, accuracy evidence, or a general
+robustness claim.
 
 ## Project-owned demo assets
 
