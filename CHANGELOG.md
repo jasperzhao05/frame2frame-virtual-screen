@@ -11,8 +11,8 @@ All notable changes are documented here. The format follows
 - Corrected the neutral face-forward direction from camera `+Z` to `-Z`, so
   screen yaw and pitch now produce the same near/far perspective as the person.
 - Rebuilt the synthetic comparison with unambiguous left/right motion, replaced
-  the real-video excerpt with a clear yaw turn, and recalibrated the default
-  screen distance to keep normal poses in frame.
+  the real-video excerpt with a continuous yaw turn and return, and recalibrated
+  the default screen distance to keep normal poses in frame.
 
 ## [0.3.0b2] - 2026-08-17
 

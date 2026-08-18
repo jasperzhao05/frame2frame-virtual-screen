@@ -6,27 +6,38 @@
 [![Python 3.9–3.13](https://img.shields.io/badge/python-3.9--3.13-3776AB)](https://www.python.org/)
 [![MIT](https://img.shields.io/badge/license-MIT-2ea44f)](https://github.com/jasperzhao05/frame2frame-virtual-screen/blob/main/LICENSE)
 
-![Same synthetic pose stream rendered without smoothing and with delay-aligned FIR smoothing](docs/demo-comparison.gif)
-
-*Visual scope: both panes use the same project-authored clip, scripted pose
-stream, and seed. This comparison runs no ML model and contains no person
-footage.*
-
-**Metric scope:** `scripts.benchmark_smoothing` measures residual pose-signal
-jitter on a separately defined, fixed synthetic workload. It does not measure
-head-pose backend accuracy, real-footage performance, or end-to-end latency.
-On that benchmark, FIR reduces residual jitter RMS by **71.2%**.
-
-Rebuild the comparison from a source checkout with local `ffmpeg`:
-
-```bash
-python -m scripts.make_showcase --out docs/demo-comparison.gif
-```
-
 `frame2frame` estimates one person's head orientation, stabilizes the noisy
 motion signal, projects a 3D plane in front of the face, and composites content
 onto that plane. The rendering follows estimated head orientation while the
 temporal path is designed to reduce visible detector jitter.
+
+![Same synthetic pose stream rendered without smoothing and with delay-aligned FIR smoothing](docs/demo-comparison.gif)
+
+*Watch the yellow border: both panes use the same project-authored clip,
+scripted pose stream, and seed. Only the temporal filter changes. This
+comparison runs no ML model and contains no person footage.*
+
+On a separately defined, fixed synthetic workload, `scripts.benchmark_smoothing`
+measures a **71.2%** reduction in residual pose-signal jitter RMS with FIR. It
+does not measure head-pose backend accuracy, real-footage performance, or
+end-to-end latency.
+
+### Real-video usage example
+
+![Intel female sample turning from frontal to image-right and back beside MediaPipe and FIR output](docs/demo-mediapipe.gif)
+
+*Source: Intel IoT DevKit
+[`head-pose-face-detection-female.mp4`](https://github.com/intel-iot-devkit/sample-videos/raw/master/head-pose-face-detection-female.mp4),
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The excerpt was
+trimmed, muted, re-encoded, labeled, and combined with a derived output that
+adds the project-owned virtual-screen texture and border. The excerpt turns
+from frontal to image-right and back, keeping yaw direction and perspective
+visible.
+This is a usage example, not evaluation or accuracy evidence.*
+
+The right pane uses the default `mediapipe` backend followed by FIR smoothing.
+MediaPipe is the primary maintained real-video path; that designation is a
+support choice, not a claim that it is the most accurate backend.
 
 This repository is an independently rebuilt and maintained open-source edition
 of a system originally developed during an internship. It does not claim
@@ -34,21 +45,11 @@ implementation equivalence to, or endorsement by, the employer. The rebuilt
 edition is an installable package with interchangeable pose backends,
 deterministic tests, and a reproducible model-free benchmark.
 
-### Real-video usage example
+Rebuild the synthetic comparison from a source checkout with local `ffmpeg`:
 
-![Intel sample turn from frontal to image-right beside corrected MediaPipe and FIR output](docs/demo-mediapipe.gif)
-
-*Source: Intel IoT DevKit
-[`head-pose-face-detection-male.mp4`](https://github.com/intel-iot-devkit/sample-videos/raw/master/head-pose-face-detection-male.mp4),
-[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The excerpt was
-trimmed, muted, re-encoded, labelled, and combined with a derived output that
-adds the project-owned virtual-screen texture and border. The excerpt includes
-a frontal-to-image-right turn so the yaw direction and perspective are visible.
-This is a usage example, not evaluation or accuracy evidence.*
-
-The right pane uses the default `mediapipe` backend followed by FIR smoothing.
-MediaPipe is the primary maintained real-video path; that designation is a
-support choice, not a claim that it is the most accurate backend.
+```bash
+python -m scripts.make_showcase --out docs/demo-comparison.gif
+```
 
 ## Why it is interesting
 

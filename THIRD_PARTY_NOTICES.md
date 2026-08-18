@@ -89,16 +89,16 @@ license, and indicate that overlays/re-encoding modified the source.
 ### Committed derived usage example
 
 `docs/demo-mediapipe.gif` derives from Intel IoT DevKit
-[`head-pose-face-detection-male.mp4`](https://github.com/intel-iot-devkit/sample-videos/raw/master/head-pose-face-detection-male.mp4),
+[`head-pose-face-detection-female.mp4`](https://github.com/intel-iot-devkit/sample-videos/raw/master/head-pose-face-detection-female.mp4),
 licensed under
 [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/).
-It uses source time 02:02–02:08. The excerpt was trimmed, muted, re-encoded,
-labelled, reduced to 10 fps and 128 colours, and placed beside a derived output
+It uses source time 02:03.5–02:10.0. The excerpt was trimmed, muted, re-encoded,
+labeled, reduced to 7 fps and 96 colours, and placed beside a derived output
 with the project-owned virtual-screen texture and border. The right pane was
-produced by the default MediaPipe backend and FIR filter. The six-second segment
-shows a frontal-to-image-right turn so the yaw direction is visible; the final
-GIF contains 60 frames at 10 fps. This asset is a usage example, not backend
-evaluation, accuracy evidence, or a general performance claim.
+produced by the default MediaPipe backend and FIR filter. The segment shows a
+frontal-to-image-right turn and return while keeping the rendered plane visible;
+the final GIF contains 46 frames at 7 fps. This asset is a usage example, not
+backend evaluation, accuracy evidence, or a general performance claim.
 
 ## Project-owned demo assets
 

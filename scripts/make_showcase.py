@@ -63,9 +63,9 @@ def _encode_gif(ffmpeg: str, raw: Path, fir: Path, output: Path) -> None:
         "drawbox=x=0:y=0:w=iw:h=36:color=black@0.72:t=fill"
     )
     filters = (
-        f"[0:v]{pane},drawtext=text='NO SMOOTHING':fontcolor=white:fontsize=16:"
+        f"[0:v]{pane},drawtext=text='RAW POSE':fontcolor=white:fontsize=16:"
         "x=(w-text_w)/2:y=9[left];"
-        f"[1:v]{pane},drawtext=text='FIR + DELAY ALIGNMENT':fontcolor=white:fontsize=16:"
+        f"[1:v]{pane},drawtext=text='DELAY-ALIGNED FIR':fontcolor=white:fontsize=16:"
         "x=(w-text_w)/2:y=9[right];"
         "[left][right]hstack=inputs=2[stack];"
         "[stack]split[for_palette][for_gif];"
