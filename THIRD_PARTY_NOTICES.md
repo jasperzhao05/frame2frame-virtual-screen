@@ -89,7 +89,8 @@ license, and indicate that overlays/re-encoding modified the source.
 
 ### Committed derived AR use-case example
 
-`docs/demo-rokid-outdoor.gif` derives from approximately 02:09.3–02:13.7 of
+`docs/demo-rokid-outdoor.gif` derives from approximately 02:09.3–02:13.7 and
+03:30.5–03:34.9 of
 BooredAtWork / Booredatwork.com's
 [“Rokid Glasses 2025 – Next Level Augmented Reality Experience!”](https://www.youtube.com/watch?v=abE88Vve0o4),
 also available through its
@@ -100,14 +101,16 @@ this repository relies on that underlying license rather than relicensing the
 footage under the project's MIT license or the mirror page's later license
 label.
 
-The selected 4.43-second continuous excerpt receives one fixed square crop and
-a global light adjustment before inference. It is muted, processed with the
-default MediaPipe and FIR path, and paired with its aligned pre-inference input.
-The two panes are labeled, encoded side by side at 720×360, and played forward
-then backward to make an 8.8-second looping GIF. No per-frame reframing or
-manual screen keyframes are used. Fresh pose observations were produced for 132
-of 133 source frames (99.25%); that is a per-clip operational measurement, not
-a claim of pose accuracy or general robustness.
+The two selected 4.43-second continuous excerpts receive fixed square crops;
+the outdoor excerpt also receives one global light adjustment before inference.
+Both are muted, processed with the default MediaPipe and FIR path, and paired
+with their aligned pre-inference inputs. The labeled panes are encoded side by
+side at 560×280 and the two excerpts are concatenated in their original forward
+direction at 30 fps to make an 8.87-second looping GIF. No per-frame reframing,
+manual screen keyframes, slow motion, interpolation, or reversed footage are
+used. Fresh pose observations were produced for 132 of 133 outdoor frames and
+all 133 indoor frames; these are per-clip operational measurements, not claims
+of pose accuracy or general robustness.
 
 `docs/system-overview.svg` embeds matched stills and a measured trace from this
 same excerpt: one pre-inference frame, that frame with the repository's pose-axis
