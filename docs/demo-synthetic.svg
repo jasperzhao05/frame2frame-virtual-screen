@@ -1,90 +1,64 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 500" role="img" aria-labelledby="title desc">
-  <title id="title">frame2frame per-frame virtual-screen rendering pipeline</title>
-  <desc id="desc">A decoded frame feeds pose estimation and the compositor. Pose observations are tracked and aligned, converted into a head-oriented 3D plane, projected to a screen quadrilateral, and composited with a texture into the output frame.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 340" role="img" aria-labelledby="title desc">
+  <title id="title">frame2frame per-frame rendering pipeline</title>
+  <desc id="desc">A decoded frame is estimated into a FaceObservation and paired with it during temporal alignment. The aligned pose projects a head-oriented screen plane; the aligned source frame, projected quadrilateral, and user-provided texture meet at the compositor.</desc>
+
   <defs>
-    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M0 0L10 5L0 10Z" fill="#2563eb"/>
     </marker>
-    <marker id="arrow-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <marker id="arrow-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M0 0L10 5L0 10Z" fill="#64748b"/>
-    </marker>
-    <marker id="arrow-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0 0L10 5L0 10Z" fill="#0f766e"/>
     </marker>
   </defs>
 
-  <rect x="1" y="1" width="1198" height="498" rx="18" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <rect width="1200" height="340" fill="#ffffff"/>
 
-  <text x="36" y="46" fill="#0f172a" font-family="Inter,ui-sans-serif,system-ui,-apple-system,sans-serif" font-size="28" font-weight="700">Per-frame virtual-screen rendering</text>
-  <text x="36" y="76" fill="#475569" font-family="Inter,ui-sans-serif,system-ui,-apple-system,sans-serif" font-size="16">Input frame → pose observation → aligned geometry → rendered frame</text>
+  <g font-family="Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif">
+    <text x="28" y="38" fill="#0f172a" font-size="25" font-weight="600">Per-frame rendering pipeline</text>
 
-  <g font-family="Inter,ui-sans-serif,system-ui,-apple-system,sans-serif">
-    <text x="30" y="122" fill="#64748b" font-size="13" font-weight="700" letter-spacing="1.2">INPUT</text>
-    <rect x="30" y="138" width="190" height="180" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
-    <circle cx="58" cy="168" r="16" fill="#e2e8f0"/>
-    <text x="58" y="173" fill="#334155" font-size="13" font-weight="700" text-anchor="middle">1</text>
-    <text x="82" y="177" fill="#0f172a" font-size="20" font-weight="700">Decode</text>
-    <text x="50" y="220" fill="#475569" font-size="15">rotation-aware</text>
-    <text x="50" y="244" fill="#475569" font-size="15">video / webcam</text>
-    <rect x="50" y="270" width="150" height="30" rx="8" fill="#e2e8f0"/>
-    <text x="125" y="290" fill="#334155" font-size="14" font-weight="600" text-anchor="middle">decoded frame</text>
+    <g fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5">
+      <rect x="28" y="104" width="180" height="94" rx="4"/>
+      <rect x="250" y="104" width="180" height="94" rx="4"/>
+      <rect x="472" y="104" width="188" height="94" rx="4"/>
+      <rect x="702" y="104" width="180" height="94" rx="4"/>
+      <rect x="924" y="104" width="192" height="94" rx="4"/>
+    </g>
 
-    <text x="260" y="122" fill="#2563eb" font-size="13" font-weight="700" letter-spacing="1.2">PERCEPTION</text>
-    <rect x="260" y="138" width="190" height="180" rx="14" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
-    <circle cx="288" cy="168" r="16" fill="#dbeafe"/>
-    <text x="288" y="173" fill="#1d4ed8" font-size="13" font-weight="700" text-anchor="middle">2</text>
-    <text x="312" y="177" fill="#0f172a" font-size="20" font-weight="700">Estimate pose</text>
-    <text x="280" y="220" fill="#475569" font-size="15">backend →</text>
-    <text x="280" y="244" fill="#1d4ed8" font-size="15" font-weight="600">FaceObservation</text>
-    <rect x="280" y="270" width="150" height="30" rx="8" fill="#dbeafe"/>
-    <text x="355" y="290" fill="#1e40af" font-size="14" font-weight="600" text-anchor="middle">pose · center · scale</text>
+    <g fill="#0f172a" font-size="19" font-weight="600">
+      <text x="42" y="140">Decode frame</text>
+      <text x="264" y="140">Pose estimation</text>
+      <text x="486" y="140">Temporal alignment</text>
+      <text x="716" y="140">Project screen plane</text>
+      <text x="938" y="140">Warp + composite</text>
+    </g>
 
-    <text x="490" y="122" fill="#b45309" font-size="13" font-weight="700" letter-spacing="1.2">TEMPORAL STATE</text>
-    <rect x="490" y="138" width="190" height="180" rx="14" fill="#fffbeb" stroke="#fcd34d" stroke-width="2"/>
-    <circle cx="518" cy="168" r="16" fill="#fef3c7"/>
-    <text x="518" y="173" fill="#92400e" font-size="13" font-weight="700" text-anchor="middle">3</text>
-    <text x="542" y="177" fill="#0f172a" font-size="20" font-weight="700">Track &amp; align</text>
-    <text x="510" y="220" fill="#475569" font-size="15">smooth · hold/fade</text>
-    <text x="510" y="244" fill="#475569" font-size="15">reset · reacquire</text>
-    <rect x="510" y="270" width="150" height="30" rx="8" fill="#fef3c7"/>
-    <text x="585" y="290" fill="#92400e" font-size="13" font-weight="600" text-anchor="middle">frame / pose pairing</text>
+    <g fill="#475569" font-size="17">
+      <text x="42" y="172">video / webcam input</text>
+      <text x="264" y="172" fill="#1d4ed8" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-weight="600">FaceObservation</text>
+      <text x="486" y="172">smooth · hold · reset</text>
+      <text x="716" y="172">pose + camera → quad</text>
+      <text x="938" y="172">warp + alpha blend</text>
+    </g>
 
-    <text x="720" y="122" fill="#0f766e" font-size="13" font-weight="700" letter-spacing="1.2">GEOMETRY</text>
-    <rect x="720" y="138" width="190" height="180" rx="14" fill="#f0fdfa" stroke="#5eead4" stroke-width="2"/>
-    <circle cx="748" cy="168" r="16" fill="#ccfbf1"/>
-    <text x="748" y="173" fill="#0f766e" font-size="13" font-weight="700" text-anchor="middle">4</text>
-    <text x="772" y="177" fill="#0f172a" font-size="20" font-weight="700">Build 3D plane</text>
-    <text x="740" y="220" fill="#475569" font-size="15">head orientation</text>
-    <text x="740" y="244" fill="#475569" font-size="15">+ camera model</text>
-    <rect x="740" y="270" width="150" height="30" rx="8" fill="#ccfbf1"/>
-    <text x="815" y="290" fill="#115e59" font-size="14" font-weight="600" text-anchor="middle">projected quad</text>
+    <g fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)">
+      <path d="M208 151H250"/>
+      <path d="M430 151H472"/>
+      <path d="M660 151H702"/>
+      <path d="M882 151H924"/>
+      <path d="M1116 151H1128"/>
+    </g>
 
-    <text x="950" y="122" fill="#7c3aed" font-size="13" font-weight="700" letter-spacing="1.2">RENDERING</text>
-    <rect x="950" y="138" width="220" height="180" rx="14" fill="#faf5ff" stroke="#c4b5fd" stroke-width="2"/>
-    <circle cx="978" cy="168" r="16" fill="#ede9fe"/>
-    <text x="978" y="173" fill="#6d28d9" font-size="13" font-weight="700" text-anchor="middle">5</text>
-    <text x="1002" y="177" fill="#0f172a" font-size="20" font-weight="700">Warp &amp; composite</text>
-    <text x="970" y="220" fill="#475569" font-size="15">source frame + texture</text>
-    <text x="970" y="244" fill="#475569" font-size="15">+ projected quad</text>
-    <rect x="970" y="270" width="180" height="30" rx="8" fill="#ede9fe"/>
-    <text x="1060" y="290" fill="#5b21b6" font-size="14" font-weight="600" text-anchor="middle">rendered output frame</text>
+    <g fill="#334155" font-size="17" font-weight="600" text-anchor="middle">
+      <text x="1158" y="143">Output</text>
+      <text x="1158" y="166">frame</text>
+    </g>
+
+    <path d="M566 198V312H978V198" fill="none" stroke="#64748b" stroke-width="1.75" marker-end="url(#arrow-muted)"/>
+    <rect x="632" y="287" width="176" height="24" fill="#ffffff"/>
+    <text x="720" y="305" fill="#475569" font-size="17" text-anchor="middle">aligned source frame</text>
+
+    <rect x="702" y="236" width="180" height="48" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+    <text x="792" y="266" fill="#334155" font-size="17" font-weight="500" text-anchor="middle">screen texture</text>
+    <path d="M882 260H1048V198" fill="none" stroke="#64748b" stroke-width="1.75" marker-end="url(#arrow-muted)"/>
   </g>
-
-  <g fill="none" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow)">
-    <path d="M220 228H260"/>
-    <path d="M450 228H490"/>
-    <path d="M680 228H720"/>
-    <path d="M910 228H950"/>
-  </g>
-
-  <path d="M125 318V450H1060V318" fill="none" stroke="#64748b" stroke-width="2.25" marker-end="url(#arrow-muted)"/>
-  <rect x="286" y="425" width="188" height="30" rx="8" fill="#ffffff"/>
-  <text x="380" y="445" fill="#475569" font-family="Inter,ui-sans-serif,system-ui,-apple-system,sans-serif" font-size="14" font-weight="600" text-anchor="middle">decoded source frame</text>
-
-  <rect x="738" y="358" width="154" height="54" rx="12" fill="#f0fdfa" stroke="#5eead4" stroke-width="2"/>
-  <text x="815" y="381" fill="#0f172a" font-family="Inter,ui-sans-serif,system-ui,-apple-system,sans-serif" font-size="16" font-weight="700" text-anchor="middle">Screen texture</text>
-  <text x="815" y="401" fill="#475569" font-family="Inter,ui-sans-serif,system-ui,-apple-system,sans-serif" font-size="13" text-anchor="middle">user-provided content</text>
-  <path d="M892 385H925Q940 385 940 370V330Q940 318 950 318" fill="none" stroke="#0f766e" stroke-width="2.25" marker-end="url(#arrow-teal)"/>
-
-  <text x="36" y="480" fill="#64748b" font-family="Inter,ui-sans-serif,system-ui,-apple-system,sans-serif" font-size="13">The source frame and texture meet the projected geometry only at the compositor.</text>
 </svg>

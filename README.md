@@ -21,16 +21,18 @@ eye gaze, SLAM, or world anchors.
 
 ## Virtual screen in motion
 
-![Actual MediaPipe and FIR pipeline output on an outdoor video of a person wearing Rokid glasses](docs/demo-rokid-outdoor.gif)
+![The same outdoor RGB frames beside the default MediaPipe and FIR frame2frame output](docs/demo-rokid-outdoor.gif)
 
-*Actual default-pipeline output from a 4.43-second continuous outdoor excerpt,
-played forward and backward as an 8.8-second preview. One fixed crop and a
-global light adjustment are applied before inference; there is no per-frame
+*The same 4.43-second continuous outdoor excerpt appears on both sides:
+fixed-crop RGB input on the left and default MediaPipe + FIR output on the
+right. A global light adjustment is applied before inference, and the excerpt
+is played forward then backward as an 8.8-second preview. There is no per-frame
 reframing or manual screen keyframing. MediaPipe produced fresh pose
 observations for 132 of 133 source frames (99.25%).*
 
-*The glasses are visual context; the colored plane is a `frame2frame` software
-overlay, not Rokid device output or hardware integration. Source footage:
+*The glasses belong to the source footage; the colored plane on the right is a
+`frame2frame` software overlay, not Rokid device output or hardware integration.
+Source footage:
 BooredAtWork,
 [“Rokid Glasses 2025 – Next Level Augmented Reality Experience!”](https://www.youtube.com/watch?v=abE88Vve0o4)
 ([Commons mirror](https://commons.wikimedia.org/wiki/File:Video_of_smart_glasses_%E2%80%93_the_Rokid_Glasses_in_2025_(with_augmented_reality).webm)),

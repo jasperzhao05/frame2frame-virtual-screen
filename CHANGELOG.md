@@ -13,6 +13,9 @@ All notable changes are documented here. The format follows
   project's identity.
 - Added an attributed outdoor AR-use-case hero produced by the default
   MediaPipe and FIR pipeline, with exact per-clip scope and licensing notes.
+- Presented that hero as a synchronized RGB-input and rendered-output
+  comparison so the software-generated screen is immediately distinguishable
+  from the source footage.
 - Retained the car-interior recovery example and controlled synthetic
   comparison as supporting evidence rather than competing hero demonstrations.
 - Replaced the stylized smoothing poster with a data-flow diagram covering
