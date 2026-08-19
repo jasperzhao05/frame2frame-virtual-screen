@@ -170,7 +170,7 @@ and audio behavior, see the
 
 ### System overview
 
-![Per-frame rendering pipeline from rotation-aware decode through pose estimation, temporal alignment, 3D plane projection, and compositing](docs/demo-synthetic.svg)
+![Three-block pipeline using a real RGB frame, pose observation, measured temporal trace, and rendered virtual-screen composite](docs/system-overview.svg)
 
 1. **Decode** — OpenCV reads the source; phone rotation metadata is applied
    explicitly and the first decoded frame establishes the real output size.
