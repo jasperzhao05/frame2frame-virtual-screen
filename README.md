@@ -170,7 +170,7 @@ and audio behavior, see the
 
 ### System overview
 
-![Per-frame architecture showing the RGB-frame and FaceObservation paths through temporal state, screen geometry, texture warping, compositing, and unchanged-frame pass-through](docs/demo-synthetic.svg)
+![Per-frame rendering pipeline from rotation-aware decode through pose estimation, temporal alignment, 3D plane projection, and compositing](docs/demo-synthetic.svg)
 
 1. **Decode** — OpenCV reads the source; phone rotation metadata is applied
    explicitly and the first decoded frame establishes the real output size.
