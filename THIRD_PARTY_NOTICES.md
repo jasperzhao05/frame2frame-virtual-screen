@@ -137,12 +137,13 @@ fixed 960×720 crop at `(x=120, y=0)` and is scaled to 768×576; no per-frame
 reframing is used. The excerpt is muted, labeled, shown at 2x playback, and
 placed beside a derived output with the project-owned virtual-screen texture
 and border. The right pane was produced by the default MediaPipe backend and
-FIR filter, with fresh observations on 422 of 450 source frames (93.8%). The
-longest continuous observation gap is 25 frames (0.83 seconds) and is retained
-to show the configured clear-and-reacquire behavior. The final GIF contains 38
-frames at 5 fps and 64 colors. This asset is a real-scene stress example, not a
-product use case, backend evaluation, accuracy evidence, or a general
-robustness claim.
+FIR filter; only the screen distance is raised from `2.0` to `4.0` to separate
+the plane from the face in this composition. Fresh observations occur on 422
+of 450 source frames (93.8%). The longest continuous observation gap is 25
+frames (0.83 seconds) and is retained to show the configured
+clear-and-reacquire behavior. The final GIF contains 38 frames at 5 fps and 48
+colors. This asset is a real-scene stress example, not a product use case,
+backend evaluation, accuracy evidence, or a general robustness claim.
 
 ## Project-owned demo assets
 
