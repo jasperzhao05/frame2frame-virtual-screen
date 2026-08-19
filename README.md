@@ -23,13 +23,14 @@ eye gaze, SLAM, or world anchors.
 
 ![Two real Rokid scenes shown as fixed-crop RGB beside default MediaPipe and FIR frame2frame output](docs/demo-rokid-outdoor.gif)
 
-*Two distinct 4.43-second continuous excerpts—an outdoor head turn and an
-indoor glasses gesture—play forward at 30 fps as one 8.87-second loop. For each
-excerpt, fixed-crop RGB input appears on the left and default MediaPipe + FIR
-output on the right. The outdoor excerpt receives one global light adjustment
-before inference. There is no per-frame reframing, manual screen keyframing,
-slow motion, interpolation, or reversed footage. MediaPipe produced fresh pose
-observations for 132 of 133 outdoor frames and all 133 indoor frames.*
+*Two distinct continuous excerpts—a 4.43-second outdoor head turn and a
+7.50-second indoor glasses gesture—play forward at 30 fps as one 11.93-second
+loop. For each excerpt, fixed-crop RGB input appears on the left and default
+MediaPipe + FIR output on the right. The outdoor excerpt receives one global
+light adjustment before inference. There is no per-frame reframing, manual
+screen keyframing, slow motion, interpolation, or reversed footage. MediaPipe
+produced fresh pose observations for 132 of 133 outdoor frames and all 225
+indoor frames.*
 
 *The glasses belong to the source footage; the colored plane on the right is a
 `frame2frame` software overlay, not Rokid device output or hardware integration.
