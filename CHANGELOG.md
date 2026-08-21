@@ -24,6 +24,10 @@ All notable changes are documented here. The format follows
 
 ### Fixed
 
+- Replaced the mismatched MediaPipe transformation-matrix pose path with a
+  canonical-face PnP fit in renderer camera coordinates, removing the upward
+  pitch offset exposed by distant virtual screens while preserving `distance=4`
+  compositions.
 - Corrected the neutral face-forward direction from camera `+Z` to `-Z`, so
   screen yaw and pitch now produce the same near/far perspective as the person.
 - Rebuilt the synthetic comparison with unambiguous left/right motion and

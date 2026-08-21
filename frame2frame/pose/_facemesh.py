@@ -1,10 +1,10 @@
 """Shared MediaPipe face helper.
 
 Uses the MediaPipe Tasks FaceLandmarker (the current, non-deprecated API; the
-legacy `solutions.FaceMesh` was dropped from the Python 3.13 wheels). It returns
-both the 2D landmarks and the head transformation matrix; the default backend
-uses the rotation for pose, the deep backends use the landmarks only to crop a
-face box. The landmark model is fetched once and cached.
+legacy `solutions.FaceMesh` was dropped from the Python 3.13 wheels). The
+default backend fits its canonical face to these landmarks in renderer camera
+coordinates; the deep backends use the same landmarks to crop a face box. The
+landmark model is fetched once and cached.
 """
 
 from __future__ import annotations
@@ -131,7 +131,6 @@ class FaceMeshDetector:
             num_faces=num_faces,
             min_face_detection_confidence=min_detection_confidence,
             min_tracking_confidence=min_tracking_confidence,
-            output_facial_transformation_matrixes=True,
         )
         self._landmarker: Any = FaceLandmarker.create_from_options(options)
         # VIDEO mode wants timestamps at the source cadence; the tracker's
@@ -142,27 +141,16 @@ class FaceMeshDetector:
         self,
         frame_bgr: np.ndarray,
         timestamp_ms: float | None = None,
-    ) -> tuple[np.ndarray | None, np.ndarray | None]:
-        """(landmarks Nx2 px, head rotation 3x3) of the first face, or (None, None)."""
+    ) -> np.ndarray | None:
+        """Return first-face landmarks in pixels, or ``None`` when absent."""
         h, w = frame_bgr.shape[:2]
         rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
         image = self._mp.Image(image_format=self._mp.ImageFormat.SRGB, data=rgb)
         result = self._landmarker.detect_for_video(image, self._timestamps.next(timestamp_ms))
         if not result.face_landmarks:
-            return None, None
+            return None
         lm = result.face_landmarks[0]
-        pts = np.array([[p.x * w, p.y * h] for p in lm], dtype=np.float64)
-        rot = None
-        if result.facial_transformation_matrixes:
-            rot = np.array(result.facial_transformation_matrixes[0])[:3, :3]
-        return pts, rot
-
-    def landmarks(
-        self,
-        frame_bgr: np.ndarray,
-        timestamp_ms: float | None = None,
-    ) -> np.ndarray | None:
-        return self.process(frame_bgr, timestamp_ms)[0]
+        return np.array([[p.x * w, p.y * h] for p in lm], dtype=np.float64)
 
     def close(self) -> None:
         self._landmarker.close()
@@ -197,7 +185,7 @@ def _detected_face_crop(
     timestamp_ms: float | None,
 ) -> _DetectedFaceCrop | None:
     """Return a valid detected crop without duplicating adapter edge cases."""
-    landmarks = detector.landmarks(frame_bgr, timestamp_ms)
+    landmarks = detector.process(frame_bgr, timestamp_ms)
     if landmarks is None:
         return None
     bbox = bbox_from_points(landmarks, margin, frame_bgr.shape)

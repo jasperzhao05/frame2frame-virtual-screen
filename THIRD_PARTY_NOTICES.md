@@ -9,7 +9,7 @@ MIT license does not replace those terms.
 
 ### MediaPipe Face Landmarker
 
-- Purpose: default face landmarks and facial transformation matrix; face crop
+- Purpose: default face landmarks and canonical-face pose fit; face crop
   detector for optional deep backends.
 - Software: [google-ai-edge/mediapipe](https://github.com/google-ai-edge/mediapipe),
   Apache License 2.0.
@@ -23,6 +23,14 @@ MIT license does not replace those terms.
 
 The model is downloaded into the user's cache and is not redistributed here.
 Review the upstream model terms and privacy notice for the intended use.
+
+This repository redistributes the 468 vertex positions from MediaPipe's
+`canonical_face_model.obj` in
+`frame2frame/pose/data/canonical_face_vertices.txt`. The default adapter fits
+those vertices to the detected image landmarks with the same pinhole-camera
+model used by the renderer. The data remains Copyright 2020 The MediaPipe
+Authors under the Apache License 2.0; its license text is included at
+`LICENSES/Apache-2.0.txt`.
 
 ### Hopenet
 
@@ -89,42 +97,48 @@ license, and indicate that overlays/re-encoding modified the source.
 
 ### Committed derived AR use-case example
 
-`docs/demo-rokid-outdoor.gif` derives from approximately 02:09.3–02:13.7 and
-03:30.5–03:38.0 of
-BooredAtWork / Booredatwork.com's
-[“Rokid Glasses 2025 – Next Level Augmented Reality Experience!”](https://www.youtube.com/watch?v=abE88Vve0o4),
-also available through its
-[Wikimedia Commons mirror](https://commons.wikimedia.org/wiki/File:Video_of_smart_glasses_%E2%80%93_the_Rokid_Glasses_in_2025_(with_augmented_reality).webm).
-The original YouTube metadata identifies the work as
-[Creative Commons Attribution 3.0](https://creativecommons.org/licenses/by/3.0/);
-this repository relies on that underlying license rather than relicensing the
-footage under the project's MIT license or the mirror page's later license
+`docs/demo-rokid-outdoor.gif` combines two attributed excerpts:
+
+- approximately 02:09.3–02:13.7 of BooredAtWork / Booredatwork.com's
+  [“Rokid Glasses 2025 – Next Level Augmented Reality Experience!”](https://www.youtube.com/watch?v=abE88Vve0o4),
+  also available through its
+  [Wikimedia Commons mirror](https://commons.wikimedia.org/wiki/File:Video_of_smart_glasses_%E2%80%93_the_Rokid_Glasses_in_2025_(with_augmented_reality).webm);
+  the original review disclosed sponsorship by Rokid; and
+- a 4.44-second fixed excerpt from Naomi 'SexyCyborg' Wu's
+  [“Vuzix Blade Review—Wearable Display for a Cyberpunk Future!”](https://www.youtube.com/watch?v=sS90qEPgc50).
+
+The archived original YouTube metadata identifies both works as Creative
+Commons Attribution works. This repository uses them under
+[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) and does not relicense
+the footage under the project's MIT license or a mirror page's later license
 label.
 
-The selected continuous excerpts—4.43 seconds outdoors and 7.50 seconds
-indoors—receive fixed square crops; the outdoor excerpt also receives one global
-light adjustment before inference. Both are muted, processed with the default
-MediaPipe and FIR path, and paired with their aligned pre-inference inputs. The
-labeled panes are encoded side by side at 640×320 and the two excerpts are
-concatenated in their original forward direction at 30 fps to make an
-11.93-second looping GIF. No per-frame reframing, manual screen keyframes, slow
-motion, interpolation, or reversed footage are used. Fresh pose observations
-were produced for 132 of 133 outdoor frames and all 225 indoor frames; these
-are per-clip operational measurements, not claims of pose accuracy or general
-robustness.
+The selected continuous excerpts—4.43 seconds from the Rokid review and 4.44
+seconds from the Vuzix review—receive fixed square presentation crops; the first
+also receives one global light adjustment before inference. Both are muted,
+processed with the MediaPipe canonical-face pose fit and FIR path at screen
+distance 4, and paired with their aligned pre-inference inputs. The labeled
+panes are encoded side by side at 720×360 with a full 256-color GIF palette.
+Every source frame is retained: the first excerpt is native 30 fps, while the
+second's native 25 fps frames are repeated as needed—never interpolated—for the
+common 30 fps presentation. The result is an 8.87-second loop. No per-frame
+reframing, manual screen keyframes, slow motion, or reversed footage is used.
+Fresh pose observations were produced for 132 of 133 frames in the first
+excerpt and 110 of 111 frames in the second; these are per-clip operational
+measurements, not claims of pose accuracy or general robustness.
 
 `docs/system-overview.svg` embeds matched stills and a measured trace from this
 same excerpt: one pre-inference frame, that frame with the repository's pose-axis
-diagnostic, a pitch trace from the run, and the corresponding default-pipeline
-composite. Those embedded derivatives remain subject to the same CC BY 3.0
-attribution and non-endorsement boundary.
+diagnostic, a pitch trace from the run, and the corresponding distance-4
+pipeline composite. Those embedded derivatives remain subject to the same
+CC BY 3.0 attribution and non-endorsement boundary.
 
-The original review disclosed sponsorship by Rokid. The colored virtual screen
-is generated by `frame2frame`; it is not footage from the glasses or evidence of
-Rokid hardware integration. This independent project is not affiliated with or
-endorsed by BooredAtWork or Rokid. Rokid is a trademark of its owner. The source
-footage, subject likeness, and trademarks are not covered by this repository's
-MIT license.
+The colored virtual screen is generated by `frame2frame`; it is not footage
+from either pair of glasses or evidence of hardware integration. This
+independent project is not affiliated with or endorsed by BooredAtWork, Naomi
+Wu, Rokid, or Vuzix. Rokid and Vuzix are trademarks of their respective owners.
+The source footage, subject likenesses, and trademarks are not covered by this
+repository's MIT license.
 
 ### Committed derived stress example
 

@@ -1,4 +1,5 @@
 import re
+from importlib import resources
 from importlib.metadata import distribution
 from pathlib import Path
 
@@ -85,6 +86,11 @@ def test_distribution_metadata_matches_importable_package():
     assert installed.version == frame2frame.__version__
     assert SpecifierSet(installed.metadata["Requires-Python"]) == SpecifierSet(">=3.9,<3.14")
     assert Path(frame2frame.__file__).with_name("py.typed").is_file()
+    assert (
+        resources.files("frame2frame.pose")
+        .joinpath("data", "canonical_face_vertices.txt")
+        .is_file()
+    )
     assert any(
         entry_point.group == "console_scripts"
         and entry_point.name == "frame2frame"

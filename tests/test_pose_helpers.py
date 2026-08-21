@@ -75,7 +75,7 @@ def test_bbox_is_clipped_to_the_frame():
 
 def test_deep_backends_share_one_landmark_crop_contract():
     class Detector:
-        def landmarks(self, frame, timestamp_ms):
+        def process(self, frame, timestamp_ms):
             assert timestamp_ms == 125.0
             return np.array([[2.0, 3.0], [8.0, 9.0]])
 
@@ -89,7 +89,7 @@ def test_deep_backends_share_one_landmark_crop_contract():
 
 def test_deep_backend_crop_propagates_missing_detection():
     class Detector:
-        def landmarks(self, frame, timestamp_ms):
+        def process(self, frame, timestamp_ms):
             return None
 
     frame = np.zeros((12, 14, 3), np.uint8)

@@ -140,10 +140,11 @@ The camera frame is OpenCV-like:
 - at neutral yaw/pitch, positive roll turns the local right axis clockwise in
   the image.
 
-MediaPipe's transformation matrix uses a different basis. The default adapter
-changes basis with `diag(1, -1, -1)` before decomposing the rotation. Keeping
-that conversion inside the adapter lets geometry and custom backends share one
-documented convention.
+The default MediaPipe adapter fits the official canonical face to the detected
+image landmarks using the renderer's own pinhole camera. The fitted canonical
+basis is converted with `diag(1, -1, -1)` before rotation decomposition.
+Keeping that conversion inside the adapter lets geometry and custom backends
+share one documented convention.
 
 The renderer reconstructs that convention with one rigid rotation:
 

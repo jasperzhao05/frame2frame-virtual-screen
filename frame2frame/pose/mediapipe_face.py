@@ -1,11 +1,4 @@
-"""Default backend: MediaPipe FaceLandmarker head pose.
-
-Reads the head transformation matrix straight from FaceLandmarker and converts
-it to yaw/pitch/roll. This is far steadier than regressing Euler angles out of a
-solvePnP fit, which suffered from a 180 degree offset and sign flips near
-profile views. MediaPipe reports rotation in a y-up / z-out-of-screen frame, so
-we change basis into the renderer's OpenCV camera frame before decomposing.
-"""
+"""Default backend: MediaPipe landmarks with renderer-aligned head pose."""
 
 from __future__ import annotations
 
@@ -14,10 +7,8 @@ import os
 import numpy as np
 
 from ..geometry import rotation_to_euler
+from ._canonical_pose import solve_renderer_rotation
 from .base import FaceObservation, HeadPose, PoseEstimator
-
-# mediapipe (x-right, y-up, z-toward-viewer) -> OpenCV camera (x-right, y-down, z-in)
-_BASIS = np.diag([1.0, -1.0, -1.0])
 
 
 class MediaPipeEstimator(PoseEstimator):
@@ -30,6 +21,7 @@ class MediaPipeEstimator(PoseEstimator):
         roll_sign: float = 1.0,
         fps: float = 30.0,
         model_path: str | os.PathLike[str] | None = None,
+        focal_length: float | None = None,
     ) -> None:
         from ._facemesh import FaceMeshDetector
 
@@ -40,6 +32,7 @@ class MediaPipeEstimator(PoseEstimator):
             fps=fps,
         )
         self._signs: tuple[float, float, float] = (yaw_sign, pitch_sign, roll_sign)
+        self._focal_length = focal_length
 
     def estimate(self, frame_bgr: np.ndarray) -> FaceObservation | None:
         return self._estimate(frame_bgr, None)
@@ -56,11 +49,18 @@ class MediaPipeEstimator(PoseEstimator):
         frame_bgr: np.ndarray,
         timestamp_ms: float | None,
     ) -> FaceObservation | None:
-        pts, rot = self._detector.process(frame_bgr, timestamp_ms)
-        if pts is None or rot is None:
+        pts = self._detector.process(frame_bgr, timestamp_ms)
+        if pts is None:
             return None
 
-        yaw, pitch, roll = rotation_to_euler(_BASIS @ rot @ _BASIS)
+        rotation = solve_renderer_rotation(
+            pts,
+            frame_bgr.shape,
+            focal_length=self._focal_length,
+        )
+        if rotation is None:
+            return None
+        yaw, pitch, roll = rotation_to_euler(rotation)
         yaw_s, pitch_s, roll_s = self._signs
         pose = HeadPose(yaw=yaw_s * yaw, pitch=pitch_s * pitch, roll=roll_s * roll)
 

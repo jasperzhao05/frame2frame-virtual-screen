@@ -271,9 +271,14 @@ def run(cfg: PipelineConfig, estimator: _EstimatorLike | None = None) -> RunSumm
         fps = float(reader.fps)
 
         if estimator is None:
-            # The source frame rate matters to tracking backends; explicit
-            # backend_kwargs still win.
-            estimator = create_estimator(cfg.backend, **{"fps": fps, **cfg.backend_kwargs})
+            # The source frame rate matters to tracking backends; callers can
+            # customize other estimator parameters through backend_kwargs.
+            backend_kwargs = {"fps": fps, **cfg.backend_kwargs}
+            if cfg.backend.strip().lower() in {"mediapipe", "mp", "facemesh"}:
+                # Pose fitting and screen projection must use one camera model.
+                # ScreenConfig is the single source of truth for that focal length.
+                backend_kwargs["focal_length"] = cfg.screen.focal_length
+            estimator = create_estimator(cfg.backend, **backend_kwargs)
             resources.callback(_close_safely, "pose estimator", estimator.close)
 
         smoother = create_filter(fps, cfg.filter)

@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from frame2frame import pipeline
+from frame2frame.config import ScreenConfig
 from frame2frame.pose.base import FaceObservation, HeadPose
 from tests.support.pipeline import (
     ClosingEstimator,
@@ -64,6 +65,54 @@ def test_reader_is_released_when_estimator_creation_fails(monkeypatch):
         pipeline.run(_minimal_config())
 
     assert reader.released
+
+
+@pytest.mark.parametrize("backend", ["mediapipe", "mp", "facemesh"])
+def test_owned_mediapipe_estimator_uses_the_renderer_focal_length(monkeypatch, backend):
+    reader = EmptyReader()
+    estimator = ClosingEstimator()
+    created = {}
+    monkeypatch.setattr(pipeline, "_open_reader", lambda cfg: reader)
+
+    def create_estimator(name, **kwargs):
+        created.update(name=name, kwargs=kwargs)
+        return estimator
+
+    monkeypatch.setattr(pipeline, "create_estimator", create_estimator)
+
+    pipeline.run(
+        _minimal_config(
+            backend=backend,
+            screen=ScreenConfig(focal_length=812.5),
+        )
+    )
+
+    assert created == {
+        "name": backend,
+        "kwargs": {"fps": 30.0, "focal_length": 812.5},
+    }
+
+
+def test_renderer_focal_length_overrides_conflicting_backend_kwarg(monkeypatch):
+    reader = EmptyReader()
+    estimator = ClosingEstimator()
+    created = {}
+    monkeypatch.setattr(pipeline, "_open_reader", lambda cfg: reader)
+
+    def create_estimator(name, **kwargs):
+        created.update(kwargs)
+        return estimator
+
+    monkeypatch.setattr(pipeline, "create_estimator", create_estimator)
+
+    pipeline.run(
+        _minimal_config(
+            backend_kwargs={"focal_length": 900.0},
+            screen=ScreenConfig(focal_length=812.5),
+        )
+    )
+
+    assert created["focal_length"] == 812.5
 
 
 def test_reader_and_owned_estimator_close_when_texture_loading_fails(monkeypatch):

@@ -9,7 +9,7 @@ description = "Render a head-locked virtual screen in front of a face by trackin
 readme = "README.md"
 requires-python = ">=3.9,<3.14"
 license = "MIT"
-license-files = ["LICENSE"]
+license-files = ["LICENSE", "LICENSES/Apache-2.0.txt"]
 authors = [{ name = "ZHAO SIBO" }]
 keywords = ["head-pose", "virtual-screen", "augmented-reality", "fir-filter", "mediapipe"]
 classifiers = [
@@ -81,7 +81,7 @@ frame2frame = "frame2frame.cli:main"
 include = ["frame2frame*"]
 
 [tool.setuptools.package-data]
-frame2frame = ["py.typed"]
+frame2frame = ["py.typed", "pose/data/*.txt"]
 
 [tool.ruff]
 line-length = 100
