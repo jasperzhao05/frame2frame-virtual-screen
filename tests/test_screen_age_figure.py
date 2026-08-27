@@ -1,3 +1,4 @@
+import hashlib
 import json
 from copy import deepcopy
 from pathlib import Path
@@ -5,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from scripts.make_screen_age_figure import (
+    _SCENE_SHA256,
     _calibration_marks,
     _canonical_fir_rows,
     _render_svg,
@@ -16,6 +18,7 @@ from scripts.make_screen_age_figure import (
 _ROOT = Path(__file__).resolve().parents[1]
 _RECEIPT_PATH = _ROOT / "docs/screen-age-data.json"
 _SVG_PATH = _ROOT / "docs/screen-age.svg"
+_SCENE_PATH = _ROOT / "docs/screen-age-scene.jpg"
 
 
 def _receipt():
@@ -29,9 +32,23 @@ def test_committed_screen_age_figure_is_reproducible_and_publish_safe():
     svg = _render_svg(receipt)
 
     assert svg == _SVG_PATH.read_text(encoding="utf-8")
-    assert "<image" not in svg
+    assert svg.count('<image href="data:image/jpeg;base64,') == 1
     assert "<script" not in svg
     assert "/Users/" not in svg
+    assert "illustrated history" in svg
+    assert "GT(t" not in svg
+
+
+def test_screen_age_scene_is_the_verified_attributed_frame(tmp_path):
+    payload = _SCENE_PATH.read_bytes()
+
+    assert hashlib.sha256(payload).hexdigest() == _SCENE_SHA256
+    assert payload.startswith(b"\xff\xd8\xff")
+
+    changed_scene = tmp_path / "changed-scene.jpg"
+    changed_scene.write_bytes(payload + b"changed")
+    with pytest.raises(ValueError, match="Screen Age scene changed"):
+        _render_svg(_receipt(), changed_scene)
 
 
 def test_public_receipt_rejects_a_false_recovered_age_claim():
@@ -106,4 +123,4 @@ def test_source_manifest_includes_screen_age_publication_assets():
         line for line in manifest.splitlines() if line.startswith("recursive-include docs")
     )
 
-    assert all(pattern in docs_rule.split() for pattern in ("*.json", "*.png", "*.svg"))
+    assert all(pattern in docs_rule.split() for pattern in ("*.jpg", "*.json", "*.png", "*.svg"))

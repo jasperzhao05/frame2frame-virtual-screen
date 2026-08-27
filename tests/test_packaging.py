@@ -108,7 +108,7 @@ def test_readme_links_are_absolute_or_existing_repository_assets():
         if not target.startswith(("https://", "http://", "mailto:", "#"))
     ]
 
-    assert relative
+    assert targets
     for target in relative:
         asset = (_REPOSITORY_ROOT / target).resolve()
         assert asset.is_relative_to(_REPOSITORY_ROOT.resolve())

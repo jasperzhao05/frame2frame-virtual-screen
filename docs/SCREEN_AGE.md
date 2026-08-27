@@ -71,19 +71,23 @@ age is capture-to-display latency.
 ## Rebuild the figure
 
 The committed receipt contains only aggregate, non-identifying values needed
-for the figure. It contains no BIWI images, per-frame coordinates, subject
-identifiers, or local filesystem paths.
+for the calibration panel. It contains no BIWI images, per-frame coordinates,
+subject identifiers, or local filesystem paths. The mechanism panel uses the
+separately attributed `screen-age-scene.jpg`: a CC BY 3.0 still from the Rokid
+review excerpt already used by the project. Its sparse screen trail illustrates
+estimated FIR output history; it is not BIWI evaluation imagery.
 
 ```bash
 python scripts/make_screen_age_figure.py \
   --data docs/screen-age-data.json \
+  --scene docs/screen-age-scene.jpg \
   --out docs/screen-age.svg
 ```
 
 The generator uses only the Python standard library and emits a deterministic,
-standalone SVG with no scripts, external resources, or embedded raster images.
-The README uses a lossless 2× PNG preview for consistent browser rendering; the
-preview links to the vector source.
+standalone SVG with no scripts or external resources. It verifies the still by
+SHA-256 before embedding it. The README uses a 2× PNG preview for consistent
+browser rendering; the preview links to the vector source.
 
 ## Evidence boundary and data source
 
@@ -97,6 +101,10 @@ redistribute the database or participant imagery. Work using BIWI should cite:
 > 101(3), 437–458, 2013.
 
 BIWI provides a geometric reference, not a human perceptual preference label.
+Panel A is a concept illustration on separately licensed real-world footage;
+Panel B is the aggregate BIWI calibration result. The two panels must not be
+read as one record-level benchmark example.
+
 The result does not evaluate MediaPipe accuracy, eye gaze, headset telemetry,
 SLAM, world anchoring, missing-observation recovery, or end-to-end system
 latency.

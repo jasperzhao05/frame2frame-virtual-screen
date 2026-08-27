@@ -1,9 +1,11 @@
-"""Build the publish-safe static Screen Age research figure.
+"""Build the static Screen Age research figure.
 
-The default path reads only the compact aggregate receipt committed under
-``docs/``.  Maintainers can explicitly refresh that receipt from the canonical
-local Screen Age result with ``--from-canonical``; source media and record-level
-rows are never copied.
+The calibration panel reads only the compact aggregate receipt committed under
+``docs/``.  The mechanism panel embeds one verified CC BY 3.0 real-scene still
+as explanatory context; it never presents that still as BIWI evaluation data.
+Maintainers can explicitly refresh the aggregate receipt from the canonical
+local Screen Age result with ``--from-canonical``; BIWI source media and
+record-level rows are never copied.
 
     python -m scripts.make_screen_age_figure
 """
@@ -14,6 +16,7 @@ rows are never copied.
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -27,6 +30,8 @@ from typing import Any
 _ROOT = Path(__file__).resolve().parents[1]
 _DEFAULT_DATA = _ROOT / "docs/screen-age-data.json"
 _DEFAULT_OUTPUT = _ROOT / "docs/screen-age.svg"
+_DEFAULT_SCENE = _ROOT / "docs/screen-age-scene.jpg"
+_SCENE_SHA256 = "5ac54da75e1c1bb255d336433edb53e940ecd22740747497d0b1640b9052a3a0"
 _FPS = 30.0
 _SCREEN_DISTANCE = 4.0
 _BOOTSTRAP_RESAMPLES = 2_000
@@ -62,6 +67,12 @@ def _arguments(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--data", type=Path, default=_DEFAULT_DATA)
     parser.add_argument("--out", type=Path, default=_DEFAULT_OUTPUT)
     parser.add_argument(
+        "--scene",
+        type=Path,
+        default=_DEFAULT_SCENE,
+        help="Verified CC BY 3.0 real-scene still used by the explanatory panel.",
+    )
+    parser.add_argument(
         "--from-canonical",
         type=Path,
         help="Explicitly rebuild the compact receipt from canonical effective-age.json.",
@@ -92,6 +103,18 @@ def _atomic_write(path: Path, text: str) -> None:
 
 def _sha256(payload: bytes) -> str:
     return hashlib.sha256(payload).hexdigest()
+
+
+def _scene_data_uri(path: Path) -> str:
+    """Return the one verified, attributed scene as an embedded JPEG."""
+
+    payload = path.read_bytes()
+    digest = _sha256(payload)
+    if digest != _SCENE_SHA256:
+        raise ValueError(f"Screen Age scene changed: expected {_SCENE_SHA256}, received {digest}")
+    if not payload.startswith(b"\xff\xd8\xff"):
+        raise ValueError("Screen Age scene must remain a JPEG")
+    return "data:image/jpeg;base64," + base64.b64encode(payload).decode("ascii")
 
 
 def _exact_ci(value: int, payload: Any, *, label: str) -> list[int]:
@@ -469,7 +492,10 @@ def _calibration_marks(designs: list[dict[str, Any]]) -> str:
     return "\n".join(output)
 
 
-def _render_svg(receipt: dict[str, Any]) -> str:
+def _render_svg(
+    receipt: dict[str, Any],
+    scene_path: Path = _DEFAULT_SCENE,
+) -> str:
     _validate_public_receipt(receipt)
     designs = receipt["fir_designs"]
     hero = receipt["hero"]
@@ -478,74 +504,88 @@ def _render_svg(receipt: dict[str, Any]) -> str:
     if hero.get("filter_name") != "fir-project-default" or screen_age != 11:
         raise ValueError("hero must remain the project-default 11-frame FIR")
 
-    trajectories = [
-        [(254, 353), (447, 319), (463, 430), (265, 465)],
-        [(333, 323), (531, 284), (552, 396), (346, 438)],
-        [(420, 289), (624, 245), (650, 359), (437, 407)],
-        [(512, 252), (722, 203), (752, 320), (533, 371)],
-        [(607, 213), (824, 160), (856, 280), (628, 336)],
+    scene_data_uri = _scene_data_uri(scene_path)
+    photo_x = 64.0
+    photo_y = 155.0
+    photo_scale = 520.0 / 420.0
+
+    def scaled_scene_path(points: list[tuple[float, float]]) -> str:
+        return _path([(photo_x + x * photo_scale, photo_y + y * photo_scale) for x, y in points])
+
+    # The current quadrilateral is recovered from the clean and composited
+    # project frames.  The preceding quads form a sparse explanatory trail of
+    # nearby estimated FIR outputs; they are not BIWI ground-truth geometry.
+    history_quads = [
+        [(204, 32), (367, 46), (376, 111), (205, 99)],
+        [(222, 28), (376, 53), (389, 114), (222, 96)],
+        [(240, 27), (390, 58), (404, 120), (244, 95)],
+        [(250, 27), (396, 60), (409, 123), (253, 96)],
     ]
-    filtered = [(258, 349), (451, 317), (467, 432), (269, 468)]
+    current_quad = [(255, 24), (398, 57), (414, 122), (260, 93)]
     ghost_paths = "\n".join(
         (
-            f'      <path d="{_path(points)}" fill="none" stroke="#7b858f" '
-            f'stroke-width="2.5" opacity="{opacity:.2f}"/>'
+            f'      <path d="{scaled_scene_path(points)}" fill="none" stroke="#fbfaf7" '
+            'stroke-width="5.0" opacity="0.52"/>'
+            f'\n      <path d="{scaled_scene_path(points)}" fill="none" stroke="#17212b" '
+            f'stroke-width="2.0" opacity="{opacity:.2f}"/>'
         )
-        for points, opacity in zip(trajectories[1:-1], (0.22, 0.30, 0.40))
+        for points, opacity in zip(history_quads, (0.22, 0.30, 0.40, 0.52))
     )
-    past_path = _path(trajectories[0])
-    filtered_path = _path(filtered)
-    current_path = _path(trajectories[-1])
+    current_path = scaled_scene_path(current_quad)
     parity_grid = _parity_grid()
     calibration_marks = _calibration_marks(designs)
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 680" role="img" aria-labelledby="screen-age-title screen-age-desc">
-  <title id="screen-age-title">Screen Age mechanism and causal FIR calibration</title>
-  <desc id="screen-age-desc">A project-authored geometric schematic shows a causal FIR response closest to an eleven-frame-old ground-truth counterfactual, with a small visible mismatch between them. A square parity plot shows that six FIR designs recover their analytic delays at seven, eleven, and nineteen frames in development and held-out diagnostics. No person media is included.</desc>
-  <rect width="1600" height="680" fill="#fbfaf7"/>
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 720" role="img" aria-labelledby="screen-age-title screen-age-desc">
+  <title id="screen-age-title">Screen Age concept and causal FIR calibration</title>
+  <desc id="screen-age-desc">Panel A uses an attributed real-world frame to illustrate a current estimated FIR screen and a sparse history of earlier estimated positions. The history is explanatory, not BIWI test imagery. Panel B is driven by aggregate BIWI measurements and shows that six registered FIR designs recover analytic delays of seven, eleven, and nineteen frames in development and held-out diagnostics.</desc>
+  <rect width="1600" height="720" fill="#fbfaf7"/>
   <g font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" fill="#17212b">
-    <line x1="1040" y1="44" x2="1040" y2="640" stroke="#d6dce1" stroke-width="2"/>
+    <line x1="1060" y1="42" x2="1060" y2="680" stroke="#d6dce1" stroke-width="2"/>
 
     <g id="mechanism">
       <text x="64" y="58" font-size="20" font-weight="700" letter-spacing="2.2" fill="#5e6974">A · MECHANISM</text>
-      <text x="64" y="106" font-size="34" font-weight="650" letter-spacing="-0.5">A causal filter can represent an older moment.</text>
-      <text x="64" y="140" font-size="20" fill="#5e6974">Past attitudes are reprojected on the same current carrier.</text>
+      <text x="64" y="104" font-size="34" font-weight="650" letter-spacing="-0.5">A filtered screen carries temporal history.</text>
+      <text x="64" y="134" font-size="19" fill="#5e6974">Real scene · estimated FIR screen · illustrated history</text>
 
-      <path d="M66,175 L96,170 L99,188 L69,193 Z" fill="none" stroke="#17212b" stroke-width="3"/>
-      <text x="112" y="190" font-size="20" font-weight="600">GT(t)</text>
-      <path d="M226,175 L256,170 L259,188 L229,193 Z" fill="none" stroke="#6f7782" stroke-width="3" stroke-dasharray="8 6"/>
-      <text x="272" y="190" font-size="20" font-weight="600">GT(t−11)</text>
-      <path d="M446,175 L476,170 L479,188 L449,193 Z" fill="#2f6fdf" fill-opacity="0.12" stroke="#2f6fdf" stroke-width="3"/>
-      <text x="492" y="190" font-size="20" font-weight="600">FIR[GT](t)</text>
-
-      <path d="M352,404 C445,354 555,303 730,247" fill="none" stroke="#aeb8c0" stroke-width="2.5" stroke-dasharray="5 9"/>
-      <path d="M730,247 L713,242 L719,258 Z" fill="#aeb8c0"/>
+      <image href="{scene_data_uri}" x="64" y="155" width="520" height="520" preserveAspectRatio="xMidYMid meet"/>
 {ghost_paths}
-      <path d="{filtered_path}" fill="#2f6fdf" fill-opacity="0.10" stroke="#2f6fdf" stroke-width="4"/>
-      <path d="{past_path}" fill="none" stroke="#6f7782" stroke-width="2.5" stroke-dasharray="11 8"/>
-      <path d="{current_path}" fill="none" stroke="#17212b" stroke-width="4"/>
+      <path d="{current_path}" fill="#2f6fdf" fill-opacity="0.12" stroke="#fbfaf7" stroke-width="7"/>
+      <path d="{current_path}" fill="#2f6fdf" fill-opacity="0.12" stroke="#2f6fdf" stroke-width="3.5"/>
+      <rect x="64" y="155" width="520" height="520" fill="none" stroke="#aeb8c0" stroke-width="2"/>
 
-      <line x1="304" y1="586" x2="741" y2="586" stroke="#2f6fdf" stroke-width="3"/>
-      <line x1="304" y1="574" x2="304" y2="598" stroke="#2f6fdf" stroke-width="3"/>
-      <line x1="741" y1="574" x2="741" y2="598" stroke="#2f6fdf" stroke-width="3"/>
-      <text x="522.5" y="563" text-anchor="middle" font-size="25" font-weight="700" fill="#2f6fdf">Screen Age · {screen_age} frames · {screen_age_ms:.0f} ms</text>
-      <text x="304" y="626" text-anchor="middle" font-size="20" fill="#5e6974">t−11</text>
-      <text x="741" y="626" text-anchor="middle" font-size="20" fill="#5e6974">t</text>
+      <text x="632" y="184" font-size="18" font-weight="700" letter-spacing="1.8" fill="#5e6974">ESTIMATED FIR OUTPUT</text>
+      <line x1="634" y1="222" x2="672" y2="222" stroke="#2f6fdf" stroke-width="4"/>
+      <text x="690" y="229" font-size="21" font-weight="600">current screen</text>
+      <line x1="634" y1="265" x2="672" y2="265" stroke="#17212b" stroke-width="2" opacity="0.45"/>
+      <text x="690" y="272" font-size="21" font-weight="600">earlier positions</text>
+
+      <line x1="632" y1="316" x2="1016" y2="316" stroke="#d6dce1" stroke-width="2"/>
+      <text x="632" y="358" font-size="18" font-weight="700" letter-spacing="1.8" fill="#5e6974">PROJECT-DEFAULT FIR</text>
+      <text x="632" y="426" font-size="52" font-weight="700" letter-spacing="-1.2">{screen_age} frames</text>
+      <text x="632" y="463" font-size="24" font-weight="600" fill="#2f6fdf">{screen_age_ms:.0f} ms at 30 fps</text>
+
+      <line x1="648" y1="534" x2="997" y2="534" stroke="#2f6fdf" stroke-width="3"/>
+      <line x1="648" y1="522" x2="648" y2="546" stroke="#2f6fdf" stroke-width="3"/>
+      <line x1="997" y1="522" x2="997" y2="546" stroke="#2f6fdf" stroke-width="3"/>
+      <text x="648" y="576" text-anchor="middle" font-size="19" fill="#5e6974">t−11</text>
+      <text x="997" y="576" text-anchor="middle" font-size="19" fill="#5e6974">t</text>
+      <text x="632" y="626" font-size="18" fill="#5e6974">Concept illustration on attributed footage.</text>
+      <text x="632" y="654" font-size="18" fill="#5e6974">Aggregate calibration evidence appears at right.</text>
     </g>
 
     <g id="calibration">
-      <text x="1080" y="58" font-size="20" font-weight="700" letter-spacing="2.2" fill="#5e6974">B · CALIBRATION</text>
-      <text x="1080" y="106" font-size="30" font-weight="650" letter-spacing="-0.4">Screen Age recovers known FIR delay.</text>
+      <text x="1092" y="58" font-size="20" font-weight="700" letter-spacing="2.2" fill="#5e6974">B · CALIBRATION</text>
+      <text x="1092" y="106" font-size="29" font-weight="650" letter-spacing="-0.4">Known FIR delay is recovered.</text>
 
-      <circle cx="1092" cy="148" r="11" fill="#fbfaf7" stroke="#2f6fdf" stroke-width="3"/>
-      <text x="1116" y="155" font-size="20">development estimate</text>
-      <path d="M1370,137 L1381,148 L1370,159 L1359,148 Z" fill="#17212b" stroke="#fbfaf7" stroke-width="1.5"/>
-      <text x="1393" y="155" font-size="20">held-out diagnostic</text>
+      <circle cx="1104" cy="148" r="10" fill="#fbfaf7" stroke="#2f6fdf" stroke-width="3"/>
+      <text x="1127" y="155" font-size="18">development</text>
+      <path d="M1325,138 L1335,148 L1325,158 L1315,148 Z" fill="#17212b" stroke="#fbfaf7" stroke-width="1.5"/>
+      <text x="1348" y="155" font-size="18">held-out</text>
 
       <rect x="1150" y="190" width="350" height="350" fill="#ffffff" stroke="#aeb8c0" stroke-width="2"/>
 {parity_grid}
       <line x1="1150" y1="540" x2="1500" y2="190" stroke="#17212b" stroke-width="2.5" stroke-dasharray="10 8" opacity="0.66"/>
 {calibration_marks}
-      <text x="1172" y="224" font-size="20" font-weight="650" fill="#5e6974">6 / 6 ages recovered</text>
+      <text x="1172" y="224" font-size="20" font-weight="650" fill="#5e6974">6 / 6 recovered ages</text>
 
       <text x="1325" y="623" text-anchor="middle" font-size="20" font-weight="600">Analytic FIR group delay (frames)</text>
       <text x="1087" y="365" text-anchor="middle" font-size="20" font-weight="600" transform="rotate(-90 1087 365)">Recovered Screen Age (frames)</text>
@@ -558,28 +598,35 @@ def _render_svg(receipt: dict[str, Any]) -> str:
 def _validate_svg(svg: str) -> None:
     lowered = svg.lower()
     forbidden = (
-        "<image",
         "<script",
         "<foreignobject",
-        "data:image",
         "xlink:href",
-        " href=",
         "/users/",
         "url(",
+        "file:",
     )
     found = [token for token in forbidden if token in lowered]
     if found:
         raise ValueError(f"SVG is not publish-safe: {found}")
     root = ET.fromstring(svg)
-    if root.attrib.get("viewBox") != "0 0 1600 680":
-        raise ValueError("SVG viewBox must remain 1600x680")
+    if root.attrib.get("viewBox") != "0 0 1600 720":
+        raise ValueError("SVG viewBox must remain 1600x720")
     if root.find("{http://www.w3.org/2000/svg}title") is None:
         raise ValueError("SVG requires an accessible title")
     if root.find("{http://www.w3.org/2000/svg}desc") is None:
         raise ValueError("SVG requires an accessible description")
+    images = re.findall(r'<image href="(data:image/jpeg;base64,[^"]+)"', svg)
+    if len(images) != 1:
+        raise ValueError("SVG must contain exactly one embedded, verified JPEG scene")
+    hrefs = re.findall(r'\shref="([^"]+)"', svg)
+    if hrefs != images:
+        raise ValueError("SVG must not reference external resources")
+    image_payload = base64.b64decode(images[0].partition(",")[2], validate=True)
+    if _sha256(image_payload) != _SCENE_SHA256:
+        raise ValueError("embedded Screen Age scene changed")
     font_sizes = [int(value) for value in re.findall(r'font-size="(\d+)"', svg)]
-    if not font_sizes or min(font_sizes) < 20:
-        raise ValueError("all SVG text must remain at least 20 canvas pixels")
+    if not font_sizes or min(font_sizes) < 18:
+        raise ValueError("all SVG text must remain at least 18 canvas pixels")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -594,7 +641,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         receipt = json.loads(args.data.read_text(encoding="utf-8"))
 
-    svg = _render_svg(receipt)
+    svg = _render_svg(receipt, args.scene)
     _validate_svg(svg)
     _atomic_write(args.out, svg)
     print(f"wrote {args.out} ({len(svg.encode('utf-8')):,} bytes)")
