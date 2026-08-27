@@ -102,6 +102,7 @@ def test_distribution_metadata_matches_importable_package():
 def test_readme_links_are_absolute_or_existing_repository_assets():
     readme = (_REPOSITORY_ROOT / "README.md").read_text(encoding="utf-8")
     targets = re.findall(r"\]\(([^)]+)\)", readme)
+    targets.extend(re.findall(r'\b(?:href|src)="([^"]+)"', readme))
     relative = [
         target
         for target in targets

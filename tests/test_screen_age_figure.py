@@ -140,4 +140,7 @@ def test_source_manifest_includes_screen_age_publication_assets():
         line for line in manifest.splitlines() if line.startswith("recursive-include docs")
     )
 
-    assert all(pattern in docs_rule.split() for pattern in ("*.jpg", "*.json", "*.png", "*.svg"))
+    assert all(
+        pattern in docs_rule.split()
+        for pattern in ("*.gif", "*.jpg", "*.json", "*.md", "*.png", "*.svg", "*.webp")
+    )

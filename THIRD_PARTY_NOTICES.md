@@ -1,9 +1,9 @@
 # Third-party notices
 
 The repository does not commit model weights or full third-party source videos.
-It does include two short, attributed derived GIFs described below. Optional
-assets are acquired at runtime and retain their upstream terms. The project's
-MIT license does not replace those terms.
+It does include two short, attributed derived media assets described below.
+Optional assets are acquired at runtime and retain their upstream terms. The
+project's MIT license does not replace those terms.
 
 ## Runtime components and models
 
@@ -97,7 +97,7 @@ license, and indicate that overlays/re-encoding modified the source.
 
 ### Committed derived AR use-case example
 
-`docs/demo-rokid-outdoor.gif` combines two attributed excerpts:
+`docs/demo-rokid-outdoor.webp` combines two attributed excerpts:
 
 - approximately 02:09.3–02:13.7 of BooredAtWork / Booredatwork.com's
   [“Rokid Glasses 2025 – Next Level Augmented Reality Experience!”](https://www.youtube.com/watch?v=abE88Vve0o4),
@@ -118,11 +118,11 @@ seconds from the Vuzix review—receive fixed square presentation crops; the fir
 also receives one global light adjustment before inference. Both are muted,
 processed with the MediaPipe canonical-face pose fit and FIR path at screen
 distance 4, and paired with their aligned pre-inference inputs. The labeled
-panes are encoded side by side at 720×360 with a full 256-color GIF palette.
-Every source frame is retained: the first excerpt is native 30 fps, while the
-second's native 25 fps frames are repeated as needed—never interpolated—for the
-common 30 fps presentation. The result is an 8.87-second loop. No per-frame
-reframing, manual screen keyframes, slow motion, or reversed footage is used.
+panes are encoded side by side as a 680×340 animated WebP at quality 90. The
+first excerpt is native 30 fps; the second's native 25 fps frames are held as
+needed—never interpolated—on the common 30 fps timeline. The result is an
+8.87-second loop. No per-frame reframing, manual screen keyframes, slow motion,
+or reversed footage is used.
 Fresh pose observations were produced for 132 of 133 frames in the first
 excerpt and 110 of 111 frames in the second; these are per-clip operational
 measurements, not claims of pose accuracy or general robustness.
