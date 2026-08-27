@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 680" role="img" aria-labelledby="screen-age-title screen-age-desc">
+  <title id="screen-age-title">Screen Age mechanism and causal FIR calibration</title>
+  <desc id="screen-age-desc">A project-authored geometric schematic shows a causal FIR response closest to an eleven-frame-old ground-truth counterfactual, with a small visible mismatch between them. A square parity plot shows that six FIR designs recover their analytic delays at seven, eleven, and nineteen frames in development and held-out diagnostics. No person media is included.</desc>
+  <rect width="1600" height="680" fill="#fbfaf7"/>
+  <g font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" fill="#17212b">
+    <line x1="1040" y1="44" x2="1040" y2="640" stroke="#d6dce1" stroke-width="2"/>
+
+    <g id="mechanism">
+      <text x="64" y="58" font-size="20" font-weight="700" letter-spacing="2.2" fill="#5e6974">A · MECHANISM</text>
+      <text x="64" y="106" font-size="34" font-weight="650" letter-spacing="-0.5">A causal filter can represent an older moment.</text>
+      <text x="64" y="140" font-size="20" fill="#5e6974">Past attitudes are reprojected on the same current carrier.</text>
+
+      <path d="M66,175 L96,170 L99,188 L69,193 Z" fill="none" stroke="#17212b" stroke-width="3"/>
+      <text x="112" y="190" font-size="20" font-weight="600">GT(t)</text>
+      <path d="M226,175 L256,170 L259,188 L229,193 Z" fill="none" stroke="#6f7782" stroke-width="3" stroke-dasharray="8 6"/>
+      <text x="272" y="190" font-size="20" font-weight="600">GT(t−11)</text>
+      <path d="M446,175 L476,170 L479,188 L449,193 Z" fill="#2f6fdf" fill-opacity="0.12" stroke="#2f6fdf" stroke-width="3"/>
+      <text x="492" y="190" font-size="20" font-weight="600">FIR[GT](t)</text>
+
+      <path d="M352,404 C445,354 555,303 730,247" fill="none" stroke="#aeb8c0" stroke-width="2.5" stroke-dasharray="5 9"/>
+      <path d="M730,247 L713,242 L719,258 Z" fill="#aeb8c0"/>
+      <path d="M333.0,323.0 L531.0,284.0 L552.0,396.0 L346.0,438.0 Z" fill="none" stroke="#7b858f" stroke-width="2.5" opacity="0.22"/>
+      <path d="M420.0,289.0 L624.0,245.0 L650.0,359.0 L437.0,407.0 Z" fill="none" stroke="#7b858f" stroke-width="2.5" opacity="0.30"/>
+      <path d="M512.0,252.0 L722.0,203.0 L752.0,320.0 L533.0,371.0 Z" fill="none" stroke="#7b858f" stroke-width="2.5" opacity="0.40"/>
+      <path d="M258.0,349.0 L451.0,317.0 L467.0,432.0 L269.0,468.0 Z" fill="#2f6fdf" fill-opacity="0.10" stroke="#2f6fdf" stroke-width="4"/>
+      <path d="M254.0,353.0 L447.0,319.0 L463.0,430.0 L265.0,465.0 Z" fill="none" stroke="#6f7782" stroke-width="2.5" stroke-dasharray="11 8"/>
+      <path d="M607.0,213.0 L824.0,160.0 L856.0,280.0 L628.0,336.0 Z" fill="none" stroke="#17212b" stroke-width="4"/>
+
+      <line x1="304" y1="586" x2="741" y2="586" stroke="#2f6fdf" stroke-width="3"/>
+      <line x1="304" y1="574" x2="304" y2="598" stroke="#2f6fdf" stroke-width="3"/>
+      <line x1="741" y1="574" x2="741" y2="598" stroke="#2f6fdf" stroke-width="3"/>
+      <text x="522.5" y="563" text-anchor="middle" font-size="25" font-weight="700" fill="#2f6fdf">Screen Age · 11 frames · 367 ms</text>
+      <text x="304" y="626" text-anchor="middle" font-size="20" fill="#5e6974">t−11</text>
+      <text x="741" y="626" text-anchor="middle" font-size="20" fill="#5e6974">t</text>
+    </g>
+
+    <g id="calibration">
+      <text x="1080" y="58" font-size="20" font-weight="700" letter-spacing="2.2" fill="#5e6974">B · CALIBRATION</text>
+      <text x="1080" y="106" font-size="30" font-weight="650" letter-spacing="-0.4">Screen Age recovers known FIR delay.</text>
+
+      <circle cx="1092" cy="148" r="11" fill="#fbfaf7" stroke="#2f6fdf" stroke-width="3"/>
+      <text x="1116" y="155" font-size="20">development estimate</text>
+      <path d="M1370,137 L1381,148 L1370,159 L1359,148 Z" fill="#17212b" stroke="#fbfaf7" stroke-width="1.5"/>
+      <text x="1393" y="155" font-size="20">held-out diagnostic</text>
+
+      <rect x="1150" y="190" width="350" height="350" fill="#ffffff" stroke="#aeb8c0" stroke-width="2"/>
+      <line x1="1150" y1="496.2" x2="1500" y2="496.2" stroke="#e3e6e8" stroke-width="1.5"/>
+      <line x1="1193.8" y1="190" x2="1193.8" y2="540" stroke="#e3e6e8" stroke-width="1.5"/>
+      <line x1="1193.8" y1="540" x2="1193.8" y2="549" stroke="#7b858f" stroke-width="2"/>
+      <text x="1193.8" y="576" text-anchor="middle" fill="#5e6974" font-size="20">7</text>
+      <line x1="1141" y1="496.2" x2="1150" y2="496.2" stroke="#7b858f" stroke-width="2"/>
+      <text x="1128" y="503.2" text-anchor="end" fill="#5e6974" font-size="20">7</text>
+      <line x1="1150" y1="408.8" x2="1500" y2="408.8" stroke="#e3e6e8" stroke-width="1.5"/>
+      <line x1="1281.2" y1="190" x2="1281.2" y2="540" stroke="#e3e6e8" stroke-width="1.5"/>
+      <line x1="1281.2" y1="540" x2="1281.2" y2="549" stroke="#7b858f" stroke-width="2"/>
+      <text x="1281.2" y="576" text-anchor="middle" fill="#5e6974" font-size="20">11</text>
+      <line x1="1141" y1="408.8" x2="1150" y2="408.8" stroke="#7b858f" stroke-width="2"/>
+      <text x="1128" y="415.8" text-anchor="end" fill="#5e6974" font-size="20">11</text>
+      <line x1="1150" y1="321.2" x2="1500" y2="321.2" stroke="#e3e6e8" stroke-width="1.5"/>
+      <line x1="1368.8" y1="190" x2="1368.8" y2="540" stroke="#e3e6e8" stroke-width="1.5"/>
+      <line x1="1368.8" y1="540" x2="1368.8" y2="549" stroke="#7b858f" stroke-width="2"/>
+      <text x="1368.8" y="576" text-anchor="middle" fill="#5e6974" font-size="20">15</text>
+      <line x1="1141" y1="321.2" x2="1150" y2="321.2" stroke="#7b858f" stroke-width="2"/>
+      <text x="1128" y="328.2" text-anchor="end" fill="#5e6974" font-size="20">15</text>
+      <line x1="1150" y1="233.8" x2="1500" y2="233.8" stroke="#e3e6e8" stroke-width="1.5"/>
+      <line x1="1456.2" y1="190" x2="1456.2" y2="540" stroke="#e3e6e8" stroke-width="1.5"/>
+      <line x1="1456.2" y1="540" x2="1456.2" y2="549" stroke="#7b858f" stroke-width="2"/>
+      <text x="1456.2" y="576" text-anchor="middle" fill="#5e6974" font-size="20">19</text>
+      <line x1="1141" y1="233.8" x2="1150" y2="233.8" stroke="#7b858f" stroke-width="2"/>
+      <text x="1128" y="240.8" text-anchor="end" fill="#5e6974" font-size="20">19</text>
+      <line x1="1150" y1="540" x2="1500" y2="190" stroke="#17212b" stroke-width="2.5" stroke-dasharray="10 8" opacity="0.66"/>
+      <circle cx="1456.2" cy="233.8" r="14" fill="#fbfaf7" stroke="#2f6fdf" stroke-width="3"/>
+      <path d="M1456.2,225.8 L1464.2,233.8 L1456.2,241.8 L1448.2,233.8 Z" fill="#17212b" stroke="#fbfaf7" stroke-width="1.5"/>
+      <circle cx="1281.2" cy="408.8" r="14" fill="#fbfaf7" stroke="#2f6fdf" stroke-width="3"/>
+      <path d="M1281.2,400.8 L1289.2,408.8 L1281.2,416.8 L1273.2,408.8 Z" fill="#17212b" stroke="#fbfaf7" stroke-width="1.5"/>
+      <circle cx="1281.2" cy="408.8" r="14" fill="#fbfaf7" stroke="#2f6fdf" stroke-width="3"/>
+      <path d="M1281.2,400.8 L1289.2,408.8 L1281.2,416.8 L1273.2,408.8 Z" fill="#17212b" stroke="#fbfaf7" stroke-width="1.5"/>
+      <circle cx="1281.2" cy="408.8" r="14" fill="#fbfaf7" stroke="#2f6fdf" stroke-width="3"/>
+      <path d="M1281.2,400.8 L1289.2,408.8 L1281.2,416.8 L1273.2,408.8 Z" fill="#17212b" stroke="#fbfaf7" stroke-width="1.5"/>
+      <circle cx="1193.8" cy="496.2" r="14" fill="#fbfaf7" stroke="#2f6fdf" stroke-width="3"/>
+      <path d="M1193.8,488.2 L1201.8,496.2 L1193.8,504.2 L1185.8,496.2 Z" fill="#17212b" stroke="#fbfaf7" stroke-width="1.5"/>
+      <circle cx="1193.8" cy="496.2" r="14" fill="#fbfaf7" stroke="#2f6fdf" stroke-width="3"/>
+      <path d="M1193.8,488.2 L1201.8,496.2 L1193.8,504.2 L1185.8,496.2 Z" fill="#17212b" stroke="#fbfaf7" stroke-width="1.5"/>
+      <text x="1218.0" y="487.0" text-anchor="start" fill="#17212b" font-size="20" font-weight="650">2 designs</text>
+      <text x="1305.0" y="400.0" text-anchor="start" fill="#17212b" font-size="20" font-weight="650">3 designs · default</text>
+      <text x="1438.0" y="270.0" text-anchor="start" fill="#17212b" font-size="20" font-weight="650">1 design</text>
+      <text x="1172" y="224" font-size="20" font-weight="650" fill="#5e6974">6 / 6 ages recovered</text>
+
+      <text x="1325" y="623" text-anchor="middle" font-size="20" font-weight="600">Analytic FIR group delay (frames)</text>
+      <text x="1087" y="365" text-anchor="middle" font-size="20" font-weight="600" transform="rotate(-90 1087 365)">Recovered Screen Age (frames)</text>
+    </g>
+  </g>
+</svg>

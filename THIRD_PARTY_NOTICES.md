@@ -166,6 +166,23 @@ backend evaluation, accuracy evidence, or a general robustness claim.
 and textures. They contain no person footage, third-party image, or model output
 and are covered by the repository's MIT License.
 
+## BIWI-derived aggregate research receipt
+
+`docs/screen-age-data.json` contains only aggregate, non-identifying results
+computed for university research from the
+[BIWI Kinect Head Pose Database](https://vision.ee.ethz.ch/datsets.html). The
+repository does not contain BIWI RGB or depth frames, pose files, participant
+imagery, subject identifiers, or per-frame derivatives. `docs/screen-age.svg`
+and its lossless PNG preview use a project-authored vector schematic rather
+than dataset imagery.
+
+ETH Zurich states that its datasets are for research purposes unless stated
+otherwise and asks users to reference the authors. Work using the BIWI database
+should cite G. Fanelli, M. Dantone, J. Gall, A. Fossati, and L. Van Gool,
+“Random Forests for Real Time 3D Face Analysis,” *International Journal of
+Computer Vision*, 101(3), 437–458, 2013. The BIWI data itself is not covered by
+this repository's MIT License.
+
 ## Research references
 
 - N. Ruiz, E. Chong, and J. M. Rehg, “Fine-Grained Head Pose Estimation
