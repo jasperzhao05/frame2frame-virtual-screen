@@ -1,5 +1,6 @@
 import hashlib
 import json
+import re
 from copy import deepcopy
 from pathlib import Path
 
@@ -35,11 +36,27 @@ def test_committed_screen_age_figure_is_reproducible_and_publish_safe():
     assert svg.count('<image href="data:image/jpeg;base64,') == 1
     assert "<script" not in svg
     assert "/Users/" not in svg
-    assert "illustrated history" in svg
-    assert "GT(t" not in svg
+    assert "The rendered screen carries a clock" in svg
+    assert "GT(t−11)" in svg
+    assert "FIR(t)" in svg
 
 
-def test_screen_age_scene_is_the_verified_attributed_frame(tmp_path):
+def test_screen_age_worldline_uses_ten_registered_solid_intermediates():
+    svg = _render_svg(_receipt())
+    paths = re.findall(
+        r'<path class="screen-worldline-history" data-age-frames="(\d+)"[^>]+>',
+        svg,
+    )
+
+    assert paths == [str(age) for age in range(10, 0, -1)]
+    for markup in re.findall(r'<path class="screen-worldline-history"[^>]+>', svg):
+        assert 'stroke="#1d1f21"' in markup
+        assert 'fill="none"' in markup
+        assert "stroke-dasharray" not in markup
+    assert 'data-age-frames="1" d="M389.6,410.6 L820.6,332.2 L863.4,547.2 L412.4,619.9 Z"' in svg
+
+
+def test_screen_age_scene_is_the_verified_held_out_biwi_frame(tmp_path):
     payload = _SCENE_PATH.read_bytes()
 
     assert hashlib.sha256(payload).hexdigest() == _SCENE_SHA256

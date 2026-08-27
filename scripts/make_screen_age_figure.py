@@ -1,11 +1,10 @@
 """Build the static Screen Age research figure.
 
 The calibration panel reads only the compact aggregate receipt committed under
-``docs/``.  The mechanism panel embeds one verified CC BY 3.0 real-scene still
-as explanatory context; it never presents that still as BIWI evaluation data.
-Maintainers can explicitly refresh the aggregate receipt from the canonical
-local Screen Age result with ``--from-canonical``; BIWI source media and
-record-level rows are never copied.
+``docs/``.  The mechanism panel embeds one checksum-pinned BIWI frame and the
+fixed projected-screen geometry for a held-out event.  Maintainers can
+explicitly refresh the aggregate receipt from the canonical local Screen Age
+result with ``--from-canonical``; the public receipt remains aggregate-only.
 
     python -m scripts.make_screen_age_figure
 """
@@ -31,10 +30,13 @@ _ROOT = Path(__file__).resolve().parents[1]
 _DEFAULT_DATA = _ROOT / "docs/screen-age-data.json"
 _DEFAULT_OUTPUT = _ROOT / "docs/screen-age.svg"
 _DEFAULT_SCENE = _ROOT / "docs/screen-age-scene.jpg"
-_SCENE_SHA256 = "5ac54da75e1c1bb255d336433edb53e940ecd22740747497d0b1640b9052a3a0"
+_SCENE_SHA256 = "35fe82ba46e1dd926e36c1301711101bb91842e78af49de4561b9d1cd3ffc461"
 _FPS = 30.0
 _SCREEN_DISTANCE = 4.0
 _BOOTSTRAP_RESAMPLES = 2_000
+_PLOT_LEFT = 1200.0
+_PLOT_TOP = 270.0
+_PLOT_SIZE = 500.0
 _EXPECTED_DELAYS = {
     "fir-fc-1-tw-3": 19,
     "fir-fc-1.5-tw-5": 11,
@@ -70,7 +72,7 @@ def _arguments(argv: list[str] | None = None) -> argparse.Namespace:
         "--scene",
         type=Path,
         default=_DEFAULT_SCENE,
-        help="Verified CC BY 3.0 real-scene still used by the explanatory panel.",
+        help="Checksum-pinned BIWI frame used by the mechanism panel.",
     )
     parser.add_argument(
         "--from-canonical",
@@ -420,26 +422,28 @@ def _path(points: list[tuple[float, float]]) -> str:
 
 
 def _x_scale(value: float) -> float:
-    return 1150.0 + (value - 5.0) / 16.0 * 350.0
+    return _PLOT_LEFT + (value - 5.0) / 16.0 * _PLOT_SIZE
 
 
 def _y_scale(value: float) -> float:
-    return 540.0 - (value - 5.0) / 16.0 * 350.0
+    return _PLOT_TOP + _PLOT_SIZE - (value - 5.0) / 16.0 * _PLOT_SIZE
 
 
 def _parity_grid() -> str:
+    plot_right = _PLOT_LEFT + _PLOT_SIZE
+    plot_bottom = _PLOT_TOP + _PLOT_SIZE
     markup: list[str] = []
     for value in (7, 11, 15, 19):
         x = _x_scale(float(value))
         y = _y_scale(float(value))
         markup.extend(
             [
-                f'      <line x1="1150" y1="{y:.1f}" x2="1500" y2="{y:.1f}" stroke="#e3e6e8" stroke-width="1.5"/>',
-                f'      <line x1="{x:.1f}" y1="190" x2="{x:.1f}" y2="540" stroke="#e3e6e8" stroke-width="1.5"/>',
-                f'      <line x1="{x:.1f}" y1="540" x2="{x:.1f}" y2="549" stroke="#7b858f" stroke-width="2"/>',
-                f'      <text x="{x:.1f}" y="576" text-anchor="middle" fill="#5e6974" font-size="20">{value}</text>',
-                f'      <line x1="1141" y1="{y:.1f}" x2="1150" y2="{y:.1f}" stroke="#7b858f" stroke-width="2"/>',
-                f'      <text x="1128" y="{y + 7:.1f}" text-anchor="end" fill="#5e6974" font-size="20">{value}</text>',
+                f'      <line x1="{_PLOT_LEFT:.1f}" y1="{y:.1f}" x2="{plot_right:.1f}" y2="{y:.1f}" stroke="#dedfdd" stroke-width="1.5"/>',
+                f'      <line x1="{x:.1f}" y1="{_PLOT_TOP:.1f}" x2="{x:.1f}" y2="{plot_bottom:.1f}" stroke="#dedfdd" stroke-width="1.5"/>',
+                f'      <line x1="{x:.1f}" y1="{plot_bottom:.1f}" x2="{x:.1f}" y2="{plot_bottom + 9:.1f}" stroke="#8d8f90" stroke-width="2"/>',
+                f'      <text x="{x:.1f}" y="{plot_bottom + 40:.1f}" text-anchor="middle" fill="#1d1f21" font-size="22">{value}</text>',
+                f'      <line x1="{_PLOT_LEFT - 9:.1f}" y1="{y:.1f}" x2="{_PLOT_LEFT:.1f}" y2="{y:.1f}" stroke="#8d8f90" stroke-width="2"/>',
+                f'      <text x="{_PLOT_LEFT - 22:.1f}" y="{y + 8:.1f}" text-anchor="end" fill="#1d1f21" font-size="22">{value}</text>',
             ]
         )
     return "\n".join(markup)
@@ -450,9 +454,9 @@ def _calibration_marks(designs: list[dict[str, Any]]) -> str:
     if counts != Counter({7: 2, 11: 3, 19: 1}):
         raise ValueError("expected three FIR calibration loci with multiplicities 2, 3, and 1")
     labels = {
-        7: (1218.0, 487.0, "start"),
-        11: (1305.0, 400.0, "start"),
-        19: (1438.0, 270.0, "start"),
+        7: (_x_scale(7.0) + 16.0, _y_scale(7.0) - 15.0, "start"),
+        11: (_x_scale(11.0) + 16.0, _y_scale(11.0) - 15.0, "start"),
+        19: (_x_scale(19.0) - 12.0, _y_scale(19.0) + 40.0, "end"),
     }
     output: list[str] = []
     for row in designs:
@@ -465,8 +469,8 @@ def _calibration_marks(designs: list[dict[str, Any]]) -> str:
         output.extend(
             [
                 (
-                    f'      <circle cx="{x:.1f}" cy="{development_y:.1f}" r="14" '
-                    'fill="#fbfaf7" stroke="#2f6fdf" stroke-width="3"/>'
+                    f'      <circle cx="{x:.1f}" cy="{development_y:.1f}" r="13" '
+                    'fill="#fbfaf7" stroke="#27ef75" stroke-width="3.5"/>'
                 ),
                 (
                     f'      <path d="M{x:.1f},{held_out_y - 8:.1f} '
@@ -486,7 +490,7 @@ def _calibration_marks(designs: list[dict[str, Any]]) -> str:
         }[value]
         output.append(
             f'      <text x="{label_x:.1f}" y="{label_y:.1f}" '
-            f'text-anchor="{anchor}" fill="#17212b" font-size="20" font-weight="650">'
+            f'text-anchor="{anchor}" fill="#1d1f21" font-size="22" font-weight="500">'
             f"{label}</text>"
         )
     return "\n".join(output)
@@ -506,93 +510,129 @@ def _render_svg(
 
     scene_data_uri = _scene_data_uri(scene_path)
     photo_x = 64.0
-    photo_y = 155.0
-    photo_scale = 520.0 / 420.0
+    photo_y = 225.0
+    photo_scale = 2.5
+    crop_x = 128.0
+    crop_y = 112.0
 
-    def scaled_scene_path(points: list[tuple[float, float]]) -> str:
-        return _path([(photo_x + x * photo_scale, photo_y + y * photo_scale) for x, y in points])
-
-    # The current quadrilateral is recovered from the clean and composited
-    # project frames.  The preceding quads form a sparse explanatory trail of
-    # nearby estimated FIR outputs; they are not BIWI ground-truth geometry.
-    history_quads = [
-        [(204, 32), (367, 46), (376, 111), (205, 99)],
-        [(222, 28), (376, 53), (389, 114), (222, 96)],
-        [(240, 27), (390, 58), (404, 120), (244, 95)],
-        [(250, 27), (396, 60), (409, 123), (253, 96)],
-    ]
-    current_quad = [(255, 24), (398, 57), (414, 122), (260, 93)]
-    ghost_paths = "\n".join(
-        (
-            f'      <path d="{scaled_scene_path(points)}" fill="none" stroke="#fbfaf7" '
-            'stroke-width="5.0" opacity="0.52"/>'
-            f'\n      <path d="{scaled_scene_path(points)}" fill="none" stroke="#17212b" '
-            f'stroke-width="2.0" opacity="{opacity:.2f}"/>'
+    def project_path(points: list[tuple[float, float]]) -> str:
+        return _path(
+            [
+                (
+                    photo_x + (x - crop_x) * photo_scale,
+                    photo_y + (y - crop_y) * photo_scale,
+                )
+                for x, y in points
+            ]
         )
-        for points, opacity in zip(history_quads, (0.22, 0.30, 0.40, 0.52))
+
+    # One held-out BIWI event, mechanically selected by the registered Screen
+    # Age procedure. Center and scale remain fixed to the current carrier; only
+    # attitude changes across the counterfactual ground-truth screens.
+    gt_now = [(289.94, 173.36), (462.71, 149.24), (481.93, 232.30), (301.22, 257.91)]
+    gt_age_11 = [(206.23, 230.78), (364.12, 228.46), (364.98, 324.74), (207.26, 313.99)]
+    fir_now = [(208.54, 226.52), (367.59, 221.31), (368.87, 317.52), (209.30, 310.01)]
+    # Ten consecutive intermediate ages make the screen worldline visible.
+    # Every outline is a mechanically derived counterfactual with the current
+    # center and scale, not interpolated or decorative geometry.
+    history_quads = [
+        (10, [(192.86, 233.55), (339.67, 223.18), (344.34, 320.85), (196.52, 315.82)]),
+        (9, [(184.78, 234.47), (322.30, 218.55), (329.04, 317.12), (189.62, 316.06)]),
+        (8, [(180.05, 232.86), (310.43, 210.79), (318.38, 309.80), (185.16, 313.99)]),
+        (7, [(177.14, 229.66), (301.97, 203.37), (309.74, 302.59), (181.52, 310.40)]),
+        (6, [(178.27, 230.06), (305.08, 197.71), (314.99, 296.02), (183.85, 310.77)]),
+        (5, [(183.12, 224.25), (316.75, 191.39), (325.87, 288.71), (187.65, 305.30)]),
+        (4, [(190.38, 220.77), (332.53, 184.07), (343.58, 279.52), (195.89, 302.18)]),
+        (3, [(205.30, 212.80), (359.81, 174.98), (372.57, 267.80), (211.60, 294.91)]),
+        (2, [(230.84, 197.86), (397.72, 163.84), (411.52, 253.28), (237.29, 280.88)]),
+        (1, [(258.24, 186.25), (430.65, 154.86), (447.78, 240.86), (267.37, 269.96)]),
+    ]
+    ghost_paths = "\n".join(
+        f'      <path class="screen-worldline-history" data-age-frames="{age}" '
+        f'd="{project_path(points)}" fill="none" stroke="#1d1f21" '
+        f'stroke-width="2.2" opacity="{0.12 + (10 - age) * (0.22 / 9):.2f}"/>'
+        for age, points in history_quads
     )
-    current_path = scaled_scene_path(current_quad)
+    gt_now_path = project_path(gt_now)
+    gt_age_11_path = project_path(gt_age_11)
+    fir_now_path = project_path(fir_now)
     parity_grid = _parity_grid()
     calibration_marks = _calibration_marks(designs)
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 720" role="img" aria-labelledby="screen-age-title screen-age-desc">
-  <title id="screen-age-title">Screen Age concept and causal FIR calibration</title>
-  <desc id="screen-age-desc">Panel A uses an attributed real-world frame to illustrate a current estimated FIR screen and a sparse history of earlier estimated positions. The history is explanatory, not BIWI test imagery. Panel B is driven by aggregate BIWI measurements and shows that six registered FIR designs recover analytic delays of seven, eleven, and nineteen frames in development and held-out diagnostics.</desc>
-  <rect width="1600" height="720" fill="#fbfaf7"/>
-  <g font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" fill="#17212b">
-    <line x1="1060" y1="42" x2="1060" y2="680" stroke="#d6dce1" stroke-width="2"/>
+    plot_right = _PLOT_LEFT + _PLOT_SIZE
+    plot_bottom = _PLOT_TOP + _PLOT_SIZE
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 1080" role="img" aria-labelledby="screen-age-title screen-age-desc">
+  <title id="screen-age-title">The rendered screen carries a clock</title>
+  <desc id="screen-age-desc">Panel A shows a held-out BIWI frame with the current ground-truth screen, an eleven-frame-old counterfactual ground-truth screen, the current causal FIR response, and ten intermediate counterfactual screens. Panel B is a smaller aggregate calibration plot showing exact recovery of the registered seven-, eleven-, and nineteen-frame FIR delays.</desc>
+  <rect width="1800" height="1080" fill="#fbfaf7"/>
+  <defs>
+    <clipPath id="screen-age-event-crop">
+      <rect x="64" y="225" width="1000" height="700"/>
+    </clipPath>
+  </defs>
+  <g font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" fill="#1d1f21">
+    <text x="64" y="72" font-size="54" font-weight="500" letter-spacing="-1.2">The rendered screen carries a clock.</text>
 
     <g id="mechanism">
-      <text x="64" y="58" font-size="20" font-weight="700" letter-spacing="2.2" fill="#5e6974">A · MECHANISM</text>
-      <text x="64" y="104" font-size="34" font-weight="650" letter-spacing="-0.5">A filtered screen carries temporal history.</text>
-      <text x="64" y="134" font-size="19" fill="#5e6974">Real scene · estimated FIR screen · illustrated history</text>
+      <text x="64" y="142" font-size="27" font-weight="500">A<tspan fill="#909294" font-weight="400"> · Mechanism</tspan></text>
 
-      <image href="{scene_data_uri}" x="64" y="155" width="520" height="520" preserveAspectRatio="xMidYMid meet"/>
+      <line x1="84" y1="192" x2="149" y2="192" stroke="#1d1f21" stroke-width="3"/>
+      <text x="167" y="202" font-size="26" font-weight="400">GT(t)</text>
+      <line x1="324" y1="192" x2="389" y2="192" stroke="#1d1f21" stroke-width="3" stroke-dasharray="13 10"/>
+      <text x="407" y="202" font-size="26" font-weight="400">GT(t−11)</text>
+      <line x1="674" y1="192" x2="739" y2="192" stroke="#27ef75" stroke-width="4"/>
+      <text x="757" y="202" font-size="26" font-weight="400">FIR(t)</text>
+
+      <g clip-path="url(#screen-age-event-crop)">
+        <image href="{scene_data_uri}" x="-256" y="-55" width="1600" height="1200" preserveAspectRatio="xMidYMid meet"/>
 {ghost_paths}
-      <path d="{current_path}" fill="#2f6fdf" fill-opacity="0.12" stroke="#fbfaf7" stroke-width="7"/>
-      <path d="{current_path}" fill="#2f6fdf" fill-opacity="0.12" stroke="#2f6fdf" stroke-width="3.5"/>
-      <rect x="64" y="155" width="520" height="520" fill="none" stroke="#aeb8c0" stroke-width="2"/>
+        <path d="{gt_age_11_path}" fill="none" stroke="#fbfaf7" stroke-width="8" stroke-dasharray="15 11"/>
+        <path d="{gt_age_11_path}" fill="none" stroke="#1d1f21" stroke-width="3.5" stroke-dasharray="15 11"/>
+        <path d="{gt_now_path}" fill="none" stroke="#fbfaf7" stroke-width="10"/>
+        <path d="{gt_now_path}" fill="none" stroke="#1d1f21" stroke-width="4.5"/>
+        <path d="{fir_now_path}" fill="#27ef75" fill-opacity="0.10" stroke="#27ef75" stroke-width="5"/>
+      </g>
+      <rect x="64" y="225" width="1000" height="700" fill="none" stroke="#c7c8c6" stroke-width="2"/>
 
-      <text x="632" y="184" font-size="18" font-weight="700" letter-spacing="1.8" fill="#5e6974">ESTIMATED FIR OUTPUT</text>
-      <line x1="634" y1="222" x2="672" y2="222" stroke="#2f6fdf" stroke-width="4"/>
-      <text x="690" y="229" font-size="21" font-weight="600">current screen</text>
-      <line x1="634" y1="265" x2="672" y2="265" stroke="#17212b" stroke-width="2" opacity="0.45"/>
-      <text x="690" y="272" font-size="21" font-weight="600">earlier positions</text>
-
-      <line x1="632" y1="316" x2="1016" y2="316" stroke="#d6dce1" stroke-width="2"/>
-      <text x="632" y="358" font-size="18" font-weight="700" letter-spacing="1.8" fill="#5e6974">PROJECT-DEFAULT FIR</text>
-      <text x="632" y="426" font-size="52" font-weight="700" letter-spacing="-1.2">{screen_age} frames</text>
-      <text x="632" y="463" font-size="24" font-weight="600" fill="#2f6fdf">{screen_age_ms:.0f} ms at 30 fps</text>
-
-      <line x1="648" y1="534" x2="997" y2="534" stroke="#2f6fdf" stroke-width="3"/>
-      <line x1="648" y1="522" x2="648" y2="546" stroke="#2f6fdf" stroke-width="3"/>
-      <line x1="997" y1="522" x2="997" y2="546" stroke="#2f6fdf" stroke-width="3"/>
-      <text x="648" y="576" text-anchor="middle" font-size="19" fill="#5e6974">t−11</text>
-      <text x="997" y="576" text-anchor="middle" font-size="19" fill="#5e6974">t</text>
-      <text x="632" y="626" font-size="18" fill="#5e6974">Concept illustration on attributed footage.</text>
-      <text x="632" y="654" font-size="18" fill="#5e6974">Aggregate calibration evidence appears at right.</text>
+      <text x="564" y="978" text-anchor="middle" font-size="34" font-weight="500"><tspan fill="#909294" font-weight="400">Screen Age</tspan><tspan> · {screen_age} frames · {screen_age_ms:.0f} ms</tspan></text>
+      <line x1="214" y1="1018" x2="914" y2="1018" stroke="#27ef75" stroke-width="3.5"/>
+      <line x1="214" y1="1005" x2="214" y2="1031" stroke="#27ef75" stroke-width="3.5"/>
+      <line x1="914" y1="1005" x2="914" y2="1031" stroke="#27ef75" stroke-width="3.5"/>
+      <text x="214" y="1062" text-anchor="middle" font-size="24">t−11</text>
+      <text x="914" y="1062" text-anchor="middle" font-size="24">t</text>
     </g>
 
     <g id="calibration">
-      <text x="1092" y="58" font-size="20" font-weight="700" letter-spacing="2.2" fill="#5e6974">B · CALIBRATION</text>
-      <text x="1092" y="106" font-size="29" font-weight="650" letter-spacing="-0.4">Known FIR delay is recovered.</text>
+      <text x="1128" y="142" font-size="27" font-weight="500">B<tspan fill="#909294" font-weight="400"> · Calibration</tspan></text>
 
-      <circle cx="1104" cy="148" r="10" fill="#fbfaf7" stroke="#2f6fdf" stroke-width="3"/>
-      <text x="1127" y="155" font-size="18">development</text>
-      <path d="M1325,138 L1335,148 L1325,158 L1315,148 Z" fill="#17212b" stroke="#fbfaf7" stroke-width="1.5"/>
-      <text x="1348" y="155" font-size="18">held-out</text>
+      <circle cx="1160" cy="192" r="10" fill="#fbfaf7" stroke="#27ef75" stroke-width="3"/>
+      <text x="1184" y="202" font-size="22">development</text>
+      <path d="M1460,182 L1470,192 L1460,202 L1450,192 Z" fill="#1d1f21" stroke="#fbfaf7" stroke-width="1.5"/>
+      <text x="1484" y="202" font-size="22">held-out</text>
 
-      <rect x="1150" y="190" width="350" height="350" fill="#ffffff" stroke="#aeb8c0" stroke-width="2"/>
+      <rect x="{_PLOT_LEFT:.1f}" y="{_PLOT_TOP:.1f}" width="{_PLOT_SIZE:.1f}" height="{_PLOT_SIZE:.1f}" fill="#ffffff" stroke="#bfc1c0" stroke-width="2"/>
 {parity_grid}
-      <line x1="1150" y1="540" x2="1500" y2="190" stroke="#17212b" stroke-width="2.5" stroke-dasharray="10 8" opacity="0.66"/>
+      <line x1="{_PLOT_LEFT:.1f}" y1="{plot_bottom:.1f}" x2="{plot_right:.1f}" y2="{_PLOT_TOP:.1f}" stroke="#1d1f21" stroke-width="2.5" stroke-dasharray="10 8" opacity="0.62"/>
 {calibration_marks}
-      <text x="1172" y="224" font-size="20" font-weight="650" fill="#5e6974">6 / 6 recovered ages</text>
 
-      <text x="1325" y="623" text-anchor="middle" font-size="20" font-weight="600">Analytic FIR group delay (frames)</text>
-      <text x="1087" y="365" text-anchor="middle" font-size="20" font-weight="600" transform="rotate(-90 1087 365)">Recovered Screen Age (frames)</text>
+      <text x="1450" y="860" text-anchor="middle" font-size="22" font-weight="400">Known FIR delay (frames)</text>
+      <text x="1140" y="520" text-anchor="middle" font-size="22" font-weight="400" transform="rotate(-90 1140 520)">Measured Screen Age (frames)</text>
+      <text x="1450" y="958" text-anchor="middle" fill="#909294" font-size="22">6 / 6 exact · development and held-out</text>
     </g>
   </g>
 </svg>
 '''
+
+
+def _validate_history_paths(svg: str) -> None:
+    history_ages = [
+        int(value)
+        for value in re.findall(
+            r'class="screen-worldline-history" data-age-frames="(\d+)"',
+            svg,
+        )
+    ]
+    if history_ages != list(range(10, 0, -1)):
+        raise ValueError("SVG must contain the ten registered intermediate screen ages")
 
 
 def _validate_svg(svg: str) -> None:
@@ -602,19 +642,22 @@ def _validate_svg(svg: str) -> None:
         "<foreignobject",
         "xlink:href",
         "/users/",
-        "url(",
         "file:",
     )
     found = [token for token in forbidden if token in lowered]
     if found:
         raise ValueError(f"SVG is not publish-safe: {found}")
+    clip_urls = re.findall(r"url\(([^)]+)\)", svg)
+    if clip_urls != ["#screen-age-event-crop"]:
+        raise ValueError(f"SVG contains an unexpected URL reference: {clip_urls}")
     root = ET.fromstring(svg)
-    if root.attrib.get("viewBox") != "0 0 1600 720":
-        raise ValueError("SVG viewBox must remain 1600x720")
+    if root.attrib.get("viewBox") != "0 0 1800 1080":
+        raise ValueError("SVG viewBox must remain 1800x1080")
     if root.find("{http://www.w3.org/2000/svg}title") is None:
         raise ValueError("SVG requires an accessible title")
     if root.find("{http://www.w3.org/2000/svg}desc") is None:
         raise ValueError("SVG requires an accessible description")
+    _validate_history_paths(svg)
     images = re.findall(r'<image href="(data:image/jpeg;base64,[^"]+)"', svg)
     if len(images) != 1:
         raise ValueError("SVG must contain exactly one embedded, verified JPEG scene")
@@ -625,8 +668,8 @@ def _validate_svg(svg: str) -> None:
     if _sha256(image_payload) != _SCENE_SHA256:
         raise ValueError("embedded Screen Age scene changed")
     font_sizes = [int(value) for value in re.findall(r'font-size="(\d+)"', svg)]
-    if not font_sizes or min(font_sizes) < 18:
-        raise ValueError("all SVG text must remain at least 18 canvas pixels")
+    if not font_sizes or min(font_sizes) < 21:
+        raise ValueError("all SVG text must remain at least 21 canvas pixels")
 
 
 def main(argv: list[str] | None = None) -> int:

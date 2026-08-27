@@ -71,11 +71,13 @@ age is capture-to-display latency.
 ## Rebuild the figure
 
 The committed receipt contains only aggregate, non-identifying values needed
-for the calibration panel. It contains no BIWI images, per-frame coordinates,
-subject identifiers, or local filesystem paths. The mechanism panel uses the
-separately attributed `screen-age-scene.jpg`: a CC BY 3.0 still from the Rokid
-review excerpt already used by the project. Its sparse screen trail illustrates
-estimated FIR output history; it is not BIWI evaluation imagery.
+for the calibration panel. It contains no images, per-frame coordinates,
+subject identifiers, or local filesystem paths. Panel A separately embeds one
+checksum-pinned held-out BIWI RGB frame and frozen projected-screen geometry
+for the mechanically selected event. The current carrier fixes center and
+scale; only ground-truth attitude changes across the counterfactual trail. The
+ten thin solid rectangles in Panel A are the consecutive age-1 through age-10
+counterfactual screens; they are neither interpolated nor decorative geometry.
 
 ```bash
 python scripts/make_screen_age_figure.py \
@@ -91,19 +93,21 @@ browser rendering; the preview links to the vector source.
 
 ## Evidence boundary and data source
 
-The aggregate receipt was produced from the
+The receipt and mechanism event were produced from the
 [BIWI Kinect Head Pose Database](https://vision.ee.ethz.ch/datsets.html), which
-ETH Zurich makes available for research purposes. This repository does not
-redistribute the database or participant imagery. Work using BIWI should cite:
+ETH Zurich makes available for non-commercial research and education. The
+repository includes only the single checksum-pinned RGB frame used by Panel A,
+not the database, depth frames, pose files, or subject identifiers. Work using
+BIWI should cite:
 
 > G. Fanelli, M. Dantone, J. Gall, A. Fossati, and L. Van Gool, “Random Forests
 > for Real Time 3D Face Analysis,” *International Journal of Computer Vision*,
 > 101(3), 437–458, 2013.
 
 BIWI provides a geometric reference, not a human perceptual preference label.
-Panel A is a concept illustration on separately licensed real-world footage;
-Panel B is the aggregate BIWI calibration result. The two panels must not be
-read as one record-level benchmark example.
+Panel A is one held-out mechanism example; Panel B is the aggregate calibration
+result. The single event is not a claim of representative pose accuracy or
+general perceptual quality.
 
 The result does not evaluate MediaPipe accuracy, eye gaze, headset telemetry,
 SLAM, world anchoring, missing-observation recovery, or end-to-end system
