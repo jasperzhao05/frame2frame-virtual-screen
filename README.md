@@ -41,13 +41,13 @@ open-source repository is not affiliated with or endorsed by Rokid.
 
 <p align="center">
   <img
-    src="https://raw.githubusercontent.com/jasperzhao05/frame2frame-virtual-screen/main/docs/demo-rokid-outdoor.gif"
+    src="https://raw.githubusercontent.com/jasperzhao05/frame2frame-virtual-screen/main/docs/demo-rokid-outdoor.webp"
     width="560"
     alt="Two real AR-glasses scenes shown beside FIR distance-4 output playing Black Myth Wukong content"
   >
 </p>
 
-*Two outdoor clips, six seconds total at 20 fps. Original footage appears on
+*Two outdoor clips, six seconds total at 15 fps. Original footage appears on
 the left; MediaPipe + FIR output at screen distance 4 appears on the right. A
 separately supplied* Black Myth: Wukong *video advances on the projected
 screen. Neither clip uses per-frame reframing, manual screen keyframing, slow
