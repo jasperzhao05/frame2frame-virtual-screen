@@ -125,7 +125,7 @@ class _ContentSampler:
         if callable(method):
             self._sample: Callable[[ContentRequest], object | None] = method
         elif callable(source):
-            self._sample = cast(Callable[[ContentRequest], object | None], source)
+            self._sample = cast(Callable[[ContentRequest], Optional[object]], source)
         else:
             raise TypeError("content_source must define frame_at(request) or be callable")
 
