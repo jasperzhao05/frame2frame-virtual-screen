@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "frame2frame-virtual-screen"
 version = "0.3.0b2"
-description = "Render a head-locked virtual screen in front of a face by tracking and smoothing head pose."
+description = "Render supplied images, video, or live frames as a head-relative virtual screen in ordinary footage."
 readme = "README.md"
 requires-python = ">=3.9,<3.14"
 license = "MIT"
@@ -143,6 +143,7 @@ module = [
     "frame2frame._version",
     "frame2frame.cli",
     "frame2frame.config",
+    "frame2frame.content",
     "frame2frame._diagnostics",
     "frame2frame._doctor",
     "frame2frame._downloads",

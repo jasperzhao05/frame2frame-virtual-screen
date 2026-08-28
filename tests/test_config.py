@@ -80,6 +80,23 @@ def test_texture_path_cannot_be_overwritten_or_used_as_video_input(tmp_path, col
         ).validate()
 
 
+def test_screen_video_path_cannot_collide_with_other_artifacts(tmp_path):
+    source = tmp_path / "source.mp4"
+
+    with pytest.raises(ValueError, match="screen.video_path"):
+        _minimal_config(
+            input=str(source),
+            screen=ScreenConfig(video_path=str(source)),
+        ).validate()
+
+
+def test_static_and_video_screen_sources_are_mutually_exclusive():
+    with pytest.raises(ValueError, match="at most one"):
+        _minimal_config(
+            screen=ScreenConfig(texture_path="screen.png", video_path="screen.mp4")
+        ).validate()
+
+
 @pytest.mark.parametrize(
     ("config", "message"),
     [
@@ -124,6 +141,31 @@ def test_texture_path_cannot_be_overwritten_or_used_as_video_input(tmp_path, col
             id="empty-texture-path",
         ),
         pytest.param(
+            _minimal_config(screen=ScreenConfig(video_path="")),
+            "video_path",
+            id="empty-video-path",
+        ),
+        pytest.param(
+            _minimal_config(screen=ScreenConfig(video_end="loop")),
+            "requires",
+            id="video-policy-without-video",
+        ),
+        pytest.param(
+            _minimal_config(screen=ScreenConfig(content_fit="squash")),
+            "content_fit",
+            id="unknown-content-fit",
+        ),
+        pytest.param(
+            _minimal_config(screen=ScreenConfig(video_end=[])),
+            "video_end",
+            id="unhashable-video-end",
+        ),
+        pytest.param(
+            _minimal_config(screen=ScreenConfig(content_fit=[])),
+            "content_fit",
+            id="unhashable-content-fit",
+        ),
+        pytest.param(
             _minimal_config(screen=ScreenConfig(alpha=1.1)),
             "alpha",
             id="alpha-above-one",
@@ -142,6 +184,33 @@ def test_texture_path_cannot_be_overwritten_or_used_as_video_input(tmp_path, col
             _minimal_config(filter=FilterConfig(kind="fir", cutoff_hz=float("nan"))),
             "finite",
             id="nonfinite-fir-cutoff",
+        ),
+        pytest.param(
+            _minimal_config(filter=FilterConfig(kind="kalman")),
+            "attitude only",
+            id="kalman-does-not-claim-translation-smoothing",
+        ),
+        pytest.param(
+            _minimal_config(
+                filter=FilterConfig(
+                    kind="kalman",
+                    smooth_translation=False,
+                    acceleration_std=0,
+                )
+            ),
+            "acceleration_std",
+            id="zero-kalman-acceleration-std",
+        ),
+        pytest.param(
+            _minimal_config(
+                filter=FilterConfig(
+                    kind="kalman",
+                    smooth_translation=False,
+                    measurement_std=float("nan"),
+                )
+            ),
+            "measurement_std",
+            id="nonfinite-kalman-measurement-std",
         ),
         pytest.param(
             _minimal_config(dropout_hold_seconds=-0.1),
@@ -176,6 +245,19 @@ def test_wide_fir_transition_is_valid_for_low_frame_rate():
     cfg = _minimal_config(filter=FilterConfig(kind="fir", cutoff_hz=2.5, transition_hz=5.0))
 
     cfg.validate(fps=6.0)
+
+
+def test_registered_kalman_configuration_is_valid_for_python_callers():
+    cfg = _minimal_config(
+        filter=FilterConfig(
+            kind="kalman",
+            smooth_translation=False,
+            acceleration_std=100.0,
+            measurement_std=1.0,
+        )
+    )
+
+    cfg.validate(fps=30.0)
 
 
 def test_audio_preservation_requires_file_input_and_output():

@@ -6,13 +6,15 @@ of unrelated video operations.
 ## Glossary
 
 - **source** — one file or webcam selected by `PipelineConfig`;
+- **content source** — a static image, timestamp-addressed video, or injected
+  latest-frame/callback source whose pixels are mapped onto the screen;
 - **backend** — a named pose implementation such as `mediapipe` or `hopenet`;
 - **estimator** — the runtime object created for a backend, or injected by a
   caller;
 - **observation** — the backend-independent `FaceObservation` passed from
   perception to temporal processing and rendering;
 - **ready packet** — one source frame paired with the filtered observation and
-  opacity that belong on that frame;
+  opacity that belong on that frame, plus its original presentation time;
 - **tracking segment** — consecutive temporal state between initial acquisition
   and a sustained-dropout reset;
 - **nominal time** — deterministic file time derived from frame index and FPS;
@@ -27,24 +29,29 @@ is one live backend instance.
 
 ## System invariants
 
-These six rules are the shortest useful description of the architecture.
+These seven rules are the shortest useful description of the architecture.
 
 1. **Frame conservation and order.** During a successful run, unless a user
    stops preview, every decoded frame leaves the pipeline exactly once and in
    source order. A missed face never shortens the output.
-2. **One temporal step per source step.** Rotation, center, and size advance on
+2. **Two streams, one presentation clock.** The person/scene stream is the
+   master clock. Timestamp-aware screen content is selected from the ready
+   packet's original zero-based media time, never from current decode position
+   or FIR emission time. A live latest-frame source explicitly trades exact
+   timestamp selection for freshness.
+3. **One temporal step per source step.** Rotation, center, and size advance on
    the same timeline. A detector miss may hold the previous observation, but it
    does not compress time or skip the filter update.
-3. **Tracking-segment isolation.** A sustained dropout closes and flushes the
+4. **Tracking-segment isolation.** A sustained dropout closes and flushes the
    current delayed segment, resets temporal state, and prevents reacquisition
    from blending with stale history.
-4. **One renderer coordinate convention.** Backend-specific basis and sign
+5. **One renderer coordinate convention.** Backend-specific basis and sign
    conversions stay inside pose adapters. Geometry, rendering, and custom
    estimators share the convention documented below.
-5. **Explicit resource ownership.** The pipeline closes readers, writers,
-   preview windows, and estimators it creates. An estimator injected by a caller
-   remains caller-owned.
-6. **Per-artifact atomic publication.** A complete plot or video replaces its
+6. **Explicit resource ownership.** The pipeline closes readers, writers,
+   preview windows, configured content videos, and estimators it creates.
+   Injected estimators and content sources remain caller-owned.
+7. **Per-artifact atomic publication.** A complete plot or video replaces its
    own destination atomically. The plot is published first; a later remux
    failure preserves the old video but does not roll back the new plot.
 
@@ -63,11 +70,11 @@ For a first code review, read the package in this order:
 3. `video.py` and `_media.py` — decode/encode geometry, writer validation, staged
    publication, and optional audio remuxing;
 4. `pose/<backend>.py` — conversion from a backend into the shared observation;
-5. `filters.py` — the three temporal policies and their delay contracts;
+5. `filters.py` — the four temporal policies and their delay contracts;
 6. `_tracking.py` — dropout segments, filter progression, and source alignment;
 7. `geometry.py` — the pure camera and gaze-plane math;
-8. `_textures.py` and `render.py` — normalized texture input, projection guards,
-   and compositing;
+8. `content.py`, `_textures.py`, and `render.py` — dynamic content timing,
+   normalized pixel input, projection guards, and compositing;
 9. `_diagnostics.py` — bounded, delay-aligned plot data and atomic plot output;
 10. `pipeline.py` — resource wiring, frame processing, emission, and publish;
 11. `cli.py` — translation from command-line flags into `PipelineConfig`.
@@ -79,22 +86,15 @@ the temporal invariants makes the internal packet flow harder to interpret.
 ## Data flow
 
 ```text
-source ─▶ VideoReader ─▶ decoded frame ─▶ PoseEstimator ─▶ FaceObservation
-                              │                                  │
-                              └────────▶ _TemporalTracker ◀──────┘
-                                         smooth / hold / align
-                                                  │
-                                                  ▼
-                                      ready frame/observation pair
-                                                  │
-                                                  ▼
-                                        gaze-plane projection
-                                                  │
-                                                  ▼
-                                      perspective composite
-                                                  │
-                                                  ▼
-                                         display / VideoWriter
+scene source ─▶ VideoReader ─▶ decoded frame ─▶ PoseEstimator ─▶ observation
+                                   │                                 │
+                                   └────────▶ temporal tracker ◀─────┘
+                                                │
+                                                ▼
+                              ready packet (frame + pose + media time)
+                                  ├─ frame ────────────────────────┐
+                                  ├─ pose ─▶ plane projection ─────┼─▶ composite ─▶ output
+                                  └─ time ─▶ sample content ───────┘
 ```
 
 `FaceObservation` is the boundary between perception and rendering. It contains:
@@ -124,9 +124,15 @@ Terminal rendering, writing, and preview are similarly isolated in
 `_FrameEmitter`. Keeping these responsibilities separate makes resource
 cleanup and publish ordering visible in the top-level function.
 
+`_FrameEmitter` samples content once for every emitted source packet, including
+packets without a current face. This keeps sequential video decoding distributed
+across the source timeline and prevents a reacquisition frame from decoding a
+large hidden interval all at once. Rendering still occurs only when the packet
+contains usable screen geometry.
+
 A ready packet is not necessarily delayed. Offline FIR compensation retains
-packets for the smoother's fixed group delay; webcam, display, One Euro, and
-passthrough paths use zero additional queue delay.
+packets for the smoother's fixed group delay; webcam, display, Kalman, One Euro,
+and passthrough paths use zero additional queue delay.
 
 ## Coordinate conventions
 
@@ -168,8 +174,9 @@ yaw, pitch, roll, center-x, center-y, face-size
 ```
 
 Filtering only angles leaves the screen anchor and scale noisy; filtering those
-six values on different timelines makes the screen lag behind its face. By
-default, all channels advance together.
+six values on different timelines makes the screen lag behind its face. FIR and
+One Euro advance all channels together by default. Kalman intentionally filters
+attitude only; position smoothing is outside the registered A100 configuration.
 
 ### FIR
 
@@ -191,14 +198,26 @@ observation that belongs to it. This corrects temporal alignment in the
 rendered file; it does not make a causal filter instantaneous. Webcam/display
 paths avoid the extra frame queue because a viewer would feel that latency.
 
+### Kalman
+
+The registered A100 design is a per-axis constant-angular-velocity estimator
+with acceleration standard deviation 100 degrees/s² and measurement standard
+deviation 1 degree. The production extension uses the pipeline-measured interval
+between successive webcam frames, unwraps Euler angles across the ±180-degree
+seam, and reports zero fixed group delay. It is the project's current causal
+live candidate for further evaluation, not a claim of universal superiority,
+zero signal lag, or zero end-to-end latency. Face center and apparent size pass
+through unchanged.
+
 ### One Euro
 
 The One Euro filter raises its cutoff as estimated motion speed rises. A steady
 head receives stronger smoothing; a fast movement receives a faster response.
 It is nonlinear and its effective lag is signal-dependent, so it does not have
 one fixed group-delay number. File inputs use their deterministic frame cadence;
-webcam inputs supply measured monotonic time deltas to the filter. FIR remains
-a uniformly sampled filter and is therefore best suited to file processing.
+webcam inputs supply measured monotonic time deltas to the filter. It remains a
+supported causal compatibility option. FIR remains uniformly sampled and is
+therefore best suited to file processing.
 
 ### Missing detections
 
@@ -252,7 +271,7 @@ validate source and paths
     → preflight optional ffmpeg
     → open reader and validate source FPS
     → create or borrow estimator
-    → prepare filter, texture, writer, and preview
+    → prepare filter, content source, writer, and preview
     → process frames and flush the final tracking segment
     → release the encoder
     → save diagnostics
@@ -266,8 +285,9 @@ existing destination from a partially successful run.
 
 - Readers determine output dimensions from a decoded, post-rotation frame.
 - Output parents are created explicitly.
-- Reader, writer, preview, and internally created estimator resources are
-  closed on success and failure. An injected estimator remains caller-owned.
+- Reader, writer, preview, configured content video, and internally created
+  estimator resources are closed on success and failure. Injected estimators
+  and content sources remain caller-owned.
 - Model downloads are written to a temporary sibling, SHA-256 checked, and
   atomically moved into the cache.
 - OpenCV video encoding does not preserve audio. The opt-in audio path renders
@@ -280,9 +300,31 @@ existing destination from a partially successful run.
   capture timestamps for webcams. OpenCV webcam recording is still written at
   a declared constant FPS; this does not preserve irregular capture timing.
 
-## Custom estimators and internal change seams
+## Adaptation boundaries
 
-### Custom estimator
+### Public dynamic-content seam
+
+`run(..., content_source=...)` accepts a caller-owned object implementing
+`frame_at(ContentRequest)` or a callable taking the same request. File packets
+use `frame_index / fps` as zero-based content time; live packets use monotonic
+elapsed capture time. The packet's original media time remains attached through
+FIR buffering and final flush; `ContentRequest` is created when that packet is
+emitted.
+
+`VideoContentSource` chooses `floor(time × content_fps)`, so it never displays a
+future frame. `LatestFrameSource` instead returns the freshest published frame
+and is restricted to webcam use by the built-in pipeline. It is a capacity-one
+reference slot: publication replaces older state, sampling never calls or joins
+the producer, and a lock protects only the reference swap. No content-frame
+playback queue can accumulate, although this says nothing about buffering
+elsewhere in the end-to-end path.
+
+With `copy=False`, publication retains the supplied array by reference and the
+producer assumes an immutability obligation. Contiguous `uint8` BGR frames then
+use the renderer's opaque zero-conversion path; other supported dtypes/channels
+take the explicit normalization path.
+
+### Caller-owned estimator seam
 
 Implement `PoseEstimator.estimate(frame_bgr)` and return one
 `FaceObservation | None`. Timestamp-aware estimators can additionally override

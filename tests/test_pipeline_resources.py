@@ -133,6 +133,155 @@ def test_reader_and_owned_estimator_close_when_texture_loading_fails(monkeypatch
     assert estimator.closed
 
 
+def test_configured_screen_video_is_pipeline_owned_and_closed(monkeypatch):
+    reader = EmptyReader()
+    estimator = ClosingEstimator()
+
+    class ScreenVideo:
+        def __init__(self, path, *, end_policy):
+            self.path = path
+            self.end_policy = end_policy
+            self.closed = False
+
+        def frame_at(self, request):
+            return np.zeros((2, 2, 3), np.uint8)
+
+        def close(self):
+            self.closed = True
+
+    created = []
+
+    def open_screen_video(*args, **kwargs):
+        source = ScreenVideo(*args, **kwargs)
+        created.append(source)
+        return source
+
+    monkeypatch.setattr(pipeline, "_open_reader", lambda cfg: reader)
+    monkeypatch.setattr(pipeline, "VideoContentSource", open_screen_video)
+
+    pipeline.run(
+        _minimal_config(
+            draw_screen=True,
+            screen=ScreenConfig(video_path="screen.mp4", video_end="loop"),
+        ),
+        estimator=estimator,
+    )
+
+    assert len(created) == 1
+    assert created[0].path == "screen.mp4"
+    assert created[0].end_policy == "loop"
+    assert created[0].closed
+    assert not estimator.closed
+
+
+def test_injected_content_source_remains_caller_owned(monkeypatch):
+    class OneFrameReader(EmptyReader):
+        def __iter__(self):
+            yield np.zeros((12, 20, 3), np.uint8)
+
+    class InjectedContent:
+        def __init__(self):
+            self.closed = False
+
+        def frame_at(self, request):
+            return np.zeros((2, 2, 3), np.uint8)
+
+        def close(self):
+            self.closed = True
+
+    source = InjectedContent()
+    monkeypatch.setattr(pipeline, "_open_reader", lambda cfg: OneFrameReader())
+
+    summary = pipeline.run(
+        _minimal_config(draw_screen=True),
+        estimator=ClosingEstimator(),
+        content_source=source,
+    )
+
+    assert summary.content_samples == 1
+    assert summary.render_samples == 0
+    assert not source.closed
+
+
+def test_latest_frame_source_rejects_file_processing_before_opening_reader(monkeypatch):
+    opened = False
+
+    def open_reader(cfg):
+        nonlocal opened
+        opened = True
+        raise AssertionError("must reject before opening")
+
+    monkeypatch.setattr(pipeline, "_open_reader", open_reader)
+
+    with pytest.raises(ValueError, match="requires a webcam input"):
+        pipeline.run(
+            _minimal_config(draw_screen=True),
+            content_source=pipeline.LatestFrameSource(),
+        )
+
+    assert not opened
+
+
+def test_configured_screen_video_closes_when_sampling_fails(monkeypatch):
+    class OneFrameReader(EmptyReader):
+        def __iter__(self):
+            yield np.zeros((12, 20, 3), np.uint8)
+
+    class FailingScreenVideo:
+        def __init__(self, path, *, end_policy):
+            self.closed = False
+
+        def frame_at(self, request):
+            raise RuntimeError("content decode failed")
+
+        def close(self):
+            self.closed = True
+
+    created = []
+
+    def open_screen_video(*args, **kwargs):
+        source = FailingScreenVideo(*args, **kwargs)
+        created.append(source)
+        return source
+
+    monkeypatch.setattr(pipeline, "_open_reader", lambda cfg: OneFrameReader())
+    monkeypatch.setattr(pipeline, "VideoContentSource", open_screen_video)
+
+    with pytest.raises(RuntimeError, match="content decode failed"):
+        pipeline.run(
+            _minimal_config(
+                draw_screen=True,
+                screen=ScreenConfig(video_path="screen.mp4"),
+            ),
+            estimator=ClosingEstimator(),
+        )
+
+    assert len(created) == 1
+    assert created[0].closed
+
+
+def test_injected_and_configured_content_conflict_before_opening_reader(monkeypatch):
+    opened = False
+
+    def open_reader(cfg):
+        nonlocal opened
+        opened = True
+        raise AssertionError("must reject before opening")
+
+    monkeypatch.setattr(pipeline, "_open_reader", open_reader)
+
+    with pytest.raises(ValueError, match="cannot be combined"):
+        pipeline.run(
+            _minimal_config(
+                draw_screen=True,
+                screen=ScreenConfig(texture_path="screen.png"),
+            ),
+            content_source=lambda request: np.zeros((2, 2, 3), np.uint8),
+        )
+
+    assert not opened
+
+
 def test_resources_close_when_writer_initialization_fails(monkeypatch, tmp_path):
     reader = EmptyReader()
     estimator = ClosingEstimator()

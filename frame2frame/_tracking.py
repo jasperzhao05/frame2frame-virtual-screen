@@ -63,6 +63,7 @@ class _PendingFrame:
     observation: FaceObservation | None
     raw_pose: AngleTriple | None = None
     frame_index: int = 0
+    media_time_seconds: float = 0.0
     detected: bool = False
     screen_opacity: float = 0.0
 
@@ -159,6 +160,7 @@ class _TemporalTracker:
         frame_index: int,
         timestamp_seconds: float | None,
     ) -> tuple[_PendingFrame, float]:
+        media_time_seconds = self._media_time(frame_index, timestamp_seconds)
         if observation is not None:
             self.anchor = _snapshot_observation(observation)
             self.misses = 0
@@ -167,13 +169,22 @@ class _TemporalTracker:
                 self.anchor.to_observation(),
                 raw_pose=self.anchor.sample.attitude,
                 frame_index=frame_index,
+                media_time_seconds=media_time_seconds,
                 detected=True,
                 screen_opacity=1.0,
             )
             return packet, 0.0
 
         if self.anchor is None:
-            return _PendingFrame(frame, None, frame_index=frame_index), 0.0
+            return (
+                _PendingFrame(
+                    frame,
+                    None,
+                    frame_index=frame_index,
+                    media_time_seconds=media_time_seconds,
+                ),
+                0.0,
+            )
 
         self.misses += 1
         elapsed = self._dropout_elapsed(timestamp_seconds)
@@ -184,11 +195,23 @@ class _TemporalTracker:
                 frame,
                 held,
                 frame_index=frame_index,
+                media_time_seconds=media_time_seconds,
                 detected=False,
                 screen_opacity=opacity,
             ),
             elapsed,
         )
+
+    def _media_time(self, frame_index: int, timestamp_seconds: float | None) -> float:
+        """Presentation time for content, distinct from estimator timestamps.
+
+        File estimator timestamps intentionally retain their established
+        one-based convention.  Media content starts at frame zero.  Live input
+        instead uses elapsed monotonic capture time.
+        """
+        if self.cfg.webcam is None or timestamp_seconds is None:
+            return frame_index / self.fps
+        return timestamp_seconds
 
     def _compensation_latency(self) -> int:
         if not self.cfg.compensate_delay or self.cfg.webcam is not None or self.cfg.display:

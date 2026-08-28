@@ -16,7 +16,7 @@ def build_parser() -> argparse.ArgumentParser:
     screen_defaults = ScreenConfig()
     parser = argparse.ArgumentParser(
         prog="frame2frame",
-        description="Render a head-locked virtual screen from a video or webcam.",
+        description="Render a head-relative virtual screen from a video or webcam.",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     source = parser.add_mutually_exclusive_group(required=True)
@@ -53,11 +53,28 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--filter",
         default="fir",
-        choices=["fir", "oneeuro", "none"],
+        choices=["fir", "kalman", "oneeuro", "none"],
         help="temporal smoothing (default: %(default)s)",
     )
 
-    parser.add_argument("--texture", help="image to show on the virtual screen")
+    screen_content = parser.add_mutually_exclusive_group()
+    screen_content.add_argument("--texture", help="image to show on the virtual screen")
+    screen_content.add_argument(
+        "--screen-video",
+        help="video to play on the virtual screen; its audio is ignored",
+    )
+    parser.add_argument(
+        "--screen-video-end",
+        choices=["hold", "loop", "hide"],
+        default=screen_defaults.video_end,
+        help="screen-video behavior at end of file (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--screen-fit",
+        choices=["stretch", "contain", "cover"],
+        default=screen_defaults.content_fit,
+        help="choose how content fills the virtual screen (default: %(default)s)",
+    )
     parser.add_argument(
         "--screen-distance",
         type=float,
@@ -128,7 +145,10 @@ def config_from_args(args: argparse.Namespace) -> PipelineConfig:
         filter=FilterConfig(
             kind=args.filter,
             cutoff_hz=args.cutoff,
-            smooth_translation=not args.no_smooth_translation,
+            # The registered Kalman design estimates attitude only.  Keep the
+            # common CLI path honest and usable without a second flag; Python
+            # callers must opt out of translation smoothing explicitly.
+            smooth_translation=False if args.filter == "kalman" else not args.no_smooth_translation,
         ),
         screen=ScreenConfig(
             distance_mul=args.screen_distance,
@@ -136,6 +156,9 @@ def config_from_args(args: argparse.Namespace) -> PipelineConfig:
             height_mul=args.screen_height,
             focal_length=args.focal_length_px,
             texture_path=args.texture,
+            video_path=args.screen_video,
+            video_end=args.screen_video_end,
+            content_fit=args.screen_fit,
         ),
         compensate_delay=not args.no_delay_compensation,
         dropout_hold_seconds=args.dropout_hold,
@@ -165,6 +188,12 @@ def main(argv: list[str] | None = None) -> int:
         f"frames: {summary.frames}  faces: {summary.faces}  "
         f"fps: {summary.fps:.1f}  inference: {summary.mean_inference_ms:.1f} ms/frame"
     )
+    if summary.content_samples:
+        print(
+            f"content: {summary.mean_content_ms:.3f} ms/sample  "
+            f"render: {summary.mean_render_ms:.3f} ms/attempt  "
+            f"attempts: {summary.render_samples}"
+        )
     if summary.output:
         print(f"saved: {summary.output}")
     return 0

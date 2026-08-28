@@ -27,6 +27,7 @@ from ._textures import (
 )
 from ._tracking import _PendingFrame, _TemporalTracker
 from .config import PipelineConfig
+from .content import ContentRequest, ContentSource, LatestFrameSource, VideoContentSource
 from .filters import create_filter
 from .pose import create_estimator
 from .pose.base import FaceObservation
@@ -85,6 +86,10 @@ class RunSummary:
     mean_inference_ms: float
     output: str | None
     audio_remuxed: bool = False
+    mean_content_ms: float = 0.0
+    mean_render_ms: float = 0.0
+    content_samples: int = 0
+    render_samples: int = 0
 
 
 @dataclass
@@ -101,6 +106,39 @@ class _RunStats:
         return float(self.inference_seconds / self.inference_samples * 1000)
 
 
+class _StaticContentSource:
+    """Return one prepared image while sharing the dynamic source path."""
+
+    def __init__(self, content: _PreparedTexture) -> None:
+        self.content = content
+
+    def frame_at(self, request: ContentRequest) -> object:
+        del request
+        return self.content
+
+
+class _ContentSampler:
+    """Resolve a source or callback and normalize its current frame."""
+
+    def __init__(self, source: object) -> None:
+        method = getattr(source, "frame_at", None)
+        if callable(method):
+            self._sample: Callable[[ContentRequest], object | None] = method
+        elif callable(source):
+            self._sample = cast(Callable[[ContentRequest], object | None], source)
+        else:
+            raise TypeError("content_source must define frame_at(request) or be callable")
+
+    def sample(self, request: ContentRequest) -> _PreparedTexture | None:
+        raw = self._sample(request)
+        if raw is None:
+            return None
+        # Do not cache by object identity. External producers often reuse one
+        # mutable grayscale/BGRA buffer; those formats require a fresh color or
+        # alpha conversion even when the ndarray object itself is unchanged.
+        return prepare_texture(raw)
+
+
 class _FrameEmitter:
     """Terminal pipeline stage: composite overlays, then write or display."""
 
@@ -108,15 +146,43 @@ class _FrameEmitter:
         self,
         cfg: PipelineConfig,
         writer: _Writer | None,
-        content: _PreparedTexture | None,
+        content: _ContentSampler | None,
     ) -> None:
         self.cfg = cfg
         self.writer = writer
         self.content = content
+        self.content_seconds = 0.0
+        self.content_samples = 0
+        self.render_seconds = 0.0
+        self.render_samples = 0
+
+    @property
+    def mean_content_ms(self) -> float:
+        if not self.content_samples:
+            return 0.0
+        return self.content_seconds / self.content_samples * 1000.0
+
+    @property
+    def mean_render_ms(self) -> float:
+        if not self.render_samples:
+            return 0.0
+        return self.render_seconds / self.render_samples * 1000.0
 
     def emit(self, packet: _PendingFrame) -> bool:
         frame = packet.frame
         observation = packet.observation
+        content = None
+        if self.content is not None:
+            started = time.perf_counter()
+            content = self.content.sample(
+                ContentRequest(
+                    packet.frame_index,
+                    packet.media_time_seconds,
+                    self.cfg.webcam is not None,
+                )
+            )
+            self.content_seconds += time.perf_counter() - started
+            self.content_samples += 1
         if observation is not None:
             if packet.detected and self.cfg.draw_bbox:
                 render.draw_bbox(frame, observation.bbox)
@@ -129,14 +195,17 @@ class _FrameEmitter:
                     observation.center,
                     observation.size,
                 )
-            if self.cfg.draw_screen:
+            if self.cfg.draw_screen and content is not None:
+                started = time.perf_counter()
                 render.draw_virtual_screen(
                     frame,
                     observation,
                     self.cfg.screen,
-                    self.content,
+                    content,
                     opacity=packet.screen_opacity,
                 )
+                self.render_seconds += time.perf_counter() - started
+                self.render_samples += 1
         if self.writer is not None:
             self.writer.write(frame)  # no-face frames pass through unchanged
         return self.cfg.display and _show(frame)
@@ -156,6 +225,23 @@ def _load_content(cfg: PipelineConfig) -> _PreparedTexture:
     else:
         texture = default_texture()
     return prepare_texture(texture)
+
+
+def _open_content_sampler(
+    cfg: PipelineConfig,
+    injected: ContentSource | Callable[[ContentRequest], object | None] | None,
+    resources: ExitStack,
+) -> _ContentSampler | None:
+    """Create configured content or borrow a caller-owned injected source."""
+    if not cfg.draw_screen:
+        return None
+    if injected is not None:
+        return _ContentSampler(injected)
+    if cfg.screen.video_path:
+        source = VideoContentSource(cfg.screen.video_path, end_policy=cfg.screen.video_end)
+        resources.callback(_close_safely, "screen video", source.close)
+        return _ContentSampler(source)
+    return _ContentSampler(_StaticContentSource(_load_content(cfg)))
 
 
 def _close_safely(label: str, callback: Callable[[], object]) -> None:
@@ -246,15 +332,31 @@ def _publish_video(
     return output, True
 
 
-def run(cfg: PipelineConfig, estimator: _EstimatorLike | None = None) -> RunSummary:
+def run(
+    cfg: PipelineConfig,
+    estimator: _EstimatorLike | None = None,
+    *,
+    content_source: ContentSource | Callable[[ContentRequest], np.ndarray | None] | None = None,
+) -> RunSummary:
     """Process the configured source.
 
-    An injected ``estimator`` remains caller-owned; otherwise the configured
-    backend is created and closed by this function.
+    Injected estimators and content sources remain caller-owned. Configured
+    backends and screen-video sources are created and closed by this function.
     """
     # Validate paths and source selection before opening a camera or truncating
     # an output. FPS-dependent filter limits are checked once the reader exists.
     cfg.validate()
+    if content_source is not None and (
+        cfg.screen.texture_path is not None or cfg.screen.video_path is not None
+    ):
+        raise ValueError(
+            "injected content_source cannot be combined with a configured screen source"
+        )
+    if cfg.draw_screen and cfg.webcam is None and isinstance(content_source, LatestFrameSource):
+        raise ValueError(
+            "LatestFrameSource requires a webcam input; use a timestamp-aware "
+            "content source for file processing"
+        )
     ffmpeg = resolve_ffmpeg() if cfg.preserve_audio else None
     if cfg.preserve_audio:
         log.warning(
@@ -282,7 +384,7 @@ def run(cfg: PipelineConfig, estimator: _EstimatorLike | None = None) -> RunSumm
             resources.callback(_close_safely, "pose estimator", estimator.close)
 
         smoother = create_filter(fps, cfg.filter)
-        content = _load_content(cfg) if cfg.draw_screen else None
+        content = _open_content_sampler(cfg, content_source, resources)
 
         # Every file encode is staged. A failed backend, render, writer, plot
         # preparation, or remux therefore leaves an existing output untouched.
@@ -328,6 +430,10 @@ def run(cfg: PipelineConfig, estimator: _EstimatorLike | None = None) -> RunSumm
         stats.mean_inference_ms,
         output_path,
         audio_remuxed=audio_remuxed,
+        mean_content_ms=emitter.mean_content_ms,
+        mean_render_ms=emitter.mean_render_ms,
+        content_samples=emitter.content_samples,
+        render_samples=emitter.render_samples,
     )
 
 

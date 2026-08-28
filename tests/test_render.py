@@ -40,8 +40,10 @@ def test_roi_paste_matches_full_frame_reference():
     render._paste_content(actual, textures.prepare_texture(content), quad, 0.73)
 
     difference = np.abs(actual.astype(np.int16) - expected.astype(np.int16))
+    # blendLinear rounds where the former NumPy expression truncated.  The
+    # efficient path is visually equivalent but may differ by one code value.
     assert difference.max() <= 1
-    assert np.count_nonzero(difference) < frame.size * 0.01
+    assert np.count_nonzero(difference) < frame.size * 0.11
 
 
 def test_paste_warps_only_the_quad_roi(monkeypatch):
@@ -58,7 +60,9 @@ def test_paste_warps_only_the_quad_roi(monkeypatch):
     monkeypatch.setattr(render.cv2, "warpPerspective", recording_warp)
     render._paste_content(frame, content, quad, 1.0)
 
-    assert len(sizes) == 2
+    # Opaque content needs one color warp; destination-space coverage is
+    # rasterized directly instead of paying for a second perspective warp.
+    assert len(sizes) == 1
     assert all(width < 500 and height < 300 for width, height in sizes)
 
 
@@ -96,6 +100,86 @@ def test_asymmetric_texture_keeps_readable_left_to_right_orientation():
 
     assert frame[40, 35, 2] > frame[40, 35, 1]  # red remains on the left
     assert frame[40, 85, 1] > frame[40, 85, 2]  # green remains on the right
+
+
+def test_contain_preserves_aspect_by_insetting_the_destination_quad():
+    outer = np.float32([[0, 0], [200, 0], [200, 100], [0, 100]])
+
+    source, destination = render._content_mapping(100, 100, outer, "contain", 2.0)
+
+    np.testing.assert_array_equal(source, np.float32([[0, 0], [100, 0], [100, 100], [0, 100]]))
+    np.testing.assert_allclose(
+        destination,
+        np.float32([[50, 0], [150, 0], [150, 100], [50, 100]]),
+        atol=1e-4,
+    )
+
+
+def test_cover_preserves_aspect_by_cropping_source_coordinates():
+    outer = np.float32([[0, 0], [200, 0], [200, 100], [0, 100]])
+
+    source, destination = render._content_mapping(100, 100, outer, "cover", 2.0)
+
+    np.testing.assert_allclose(
+        source,
+        np.float32([[0, 25], [100, 25], [100, 75], [0, 75]]),
+    )
+    np.testing.assert_array_equal(destination, outer)
+
+
+def test_contain_renders_centered_content_and_black_bars_inside_the_plane():
+    frame = np.full((100, 160, 3), 80, np.uint8)
+    content = np.full((40, 40, 3), (10, 20, 200), np.uint8)
+    quad = np.float32([[20, 20], [140, 20], [140, 80], [20, 80]])
+
+    render._paste_content(frame, content, quad, 1.0, fit="contain", target_aspect=2.0)
+
+    assert frame[50, 30].max() <= 1  # left bar
+    assert frame[50, 130].max() <= 1  # right bar
+    np.testing.assert_allclose(frame[50, 80], (10, 20, 200), atol=1)
+    np.testing.assert_array_equal(frame[10, 10], (80, 80, 80))
+
+
+def test_cover_crops_source_coordinates_instead_of_squashing_the_full_image():
+    frame = np.zeros((100, 160, 3), np.uint8)
+    content = np.empty((100, 100, 3), np.uint8)
+    content[:25] = (255, 0, 0)
+    content[25:75] = (0, 255, 0)
+    content[75:] = (0, 0, 255)
+    quad = np.float32([[20, 20], [140, 20], [140, 80], [20, 80]])
+
+    render._paste_content(frame, content, quad, 1.0, fit="cover", target_aspect=2.0)
+
+    assert frame[28, 80, 1] > 240
+    assert frame[72, 80, 1] > 240
+    assert frame[50, 80, 0] < 10
+    assert frame[50, 80, 2] < 10
+
+
+def test_cover_does_not_bleed_more_than_two_pixels_outside_the_quad():
+    frame = np.full((120, 180, 3), 17, np.uint8)
+    content = np.full((80, 80, 3), 230, np.uint8)
+    quad = np.float32([[38.4, 28.2], [151.7, 35.6], [142.1, 94.4], [29.3, 87.8]])
+
+    render._paste_content(frame, content, quad, 1.0, fit="cover", target_aspect=2.0)
+
+    changed = np.argwhere(np.any(frame != 17, axis=2))
+    distances = [cv2.pointPolygonTest(quad, (float(x), float(y)), True) for y, x in changed]
+    assert min(distances) >= -2.0
+
+
+def test_projection_records_actual_aspect_after_minimum_size_clamping():
+    frame = np.zeros((120, 160, 3), np.uint8)
+    observation = FaceObservation(HeadPose(0, 0, 0), (80, 60), 5, (75, 55, 85, 65))
+
+    projection = render._project_screen(
+        frame,
+        observation,
+        ScreenConfig(width_mul=4.0, height_mul=2.0, min_size_px=40.0),
+    )
+
+    assert projection is not None
+    assert projection.aspect == pytest.approx(1.0)
 
 
 def test_pose_axis_uses_the_forward_gaze_direction(monkeypatch):

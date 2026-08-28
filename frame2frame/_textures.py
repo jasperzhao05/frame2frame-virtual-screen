@@ -11,10 +11,14 @@ import numpy as np
 
 @dataclass(frozen=True)
 class _PreparedTexture:
-    """Static, camera-facing texture channels prepared once per pipeline run."""
+    """Camera-facing texture channels ready for the renderer.
+
+    ``alpha=None`` is the common opaque-video fast path.  It avoids allocating
+    and scanning a full float32 plane for every decoded BGR content frame.
+    """
 
     bgr: np.ndarray
-    alpha: np.ndarray
+    alpha: np.ndarray | None
 
     def __post_init__(self) -> None:
         valid_color = (
@@ -25,7 +29,7 @@ class _PreparedTexture:
         )
         if not valid_color:
             raise ValueError("prepared texture color must be a uint8 BGR array")
-        valid_alpha = (
+        valid_alpha = self.alpha is None or (
             isinstance(self.alpha, np.ndarray)
             and self.alpha.dtype == np.float32
             and self.alpha.shape == self.bgr.shape[:2]
@@ -34,7 +38,9 @@ class _PreparedTexture:
             raise ValueError("prepared texture alpha must be a matching float32 plane")
         if self.bgr.size == 0:
             raise ValueError("prepared texture must not be empty")
-        if not np.isfinite(self.alpha).all() or np.any((self.alpha < 0) | (self.alpha > 1)):
+        if self.alpha is not None and (
+            not np.isfinite(self.alpha).all() or np.any((self.alpha < 0) | (self.alpha > 1))
+        ):
             raise ValueError("prepared texture alpha must contain finite values in [0, 1]")
 
 
@@ -114,6 +120,9 @@ def _scaled_values(values: object, *, alpha: bool) -> tuple[np.ndarray, float]:
 
 def _color_to_uint8(values: object) -> np.ndarray:
     """Convert common image dtypes without wrapping or silently darkening."""
+    array = np.asarray(values)
+    if array.dtype == np.uint8:
+        return array
     scaled, scale = _scaled_values(values, alpha=False)
     return np.rint(scaled * (255.0 / scale)).astype(np.uint8)
 
@@ -147,11 +156,9 @@ def prepare_texture(content: object) -> _PreparedTexture:
 
     color = _color_to_uint8(color)
     bgr = cv2.cvtColor(color, cv2.COLOR_GRAY2BGR) if channels == 1 else color
-    alpha = (
-        _alpha_to_float(image[..., 3]) if channels == 4 else np.ones(image.shape[:2], np.float32)
-    )
+    alpha = _alpha_to_float(image[..., 3]) if channels == 4 else None
 
     return _PreparedTexture(
         np.ascontiguousarray(bgr),
-        np.ascontiguousarray(alpha),
+        np.ascontiguousarray(alpha) if alpha is not None else None,
     )

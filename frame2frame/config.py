@@ -115,6 +115,26 @@ def _color_channel(value: object) -> bool:
     return number is not None and 0 <= number <= 255
 
 
+def _validate_screen_content(
+    texture_path: object,
+    video_path: object,
+    video_end: object,
+    content_fit: object,
+) -> None:
+    if texture_path is not None and (not isinstance(texture_path, str) or not texture_path.strip()):
+        raise ValueError("screen.texture_path must be a non-empty path or None")
+    if video_path is not None and (not isinstance(video_path, str) or not video_path.strip()):
+        raise ValueError("screen.video_path must be a non-empty path or None")
+    if texture_path is not None and video_path is not None:
+        raise ValueError("set at most one of screen.texture_path and screen.video_path")
+    if not isinstance(video_end, str) or video_end not in {"hold", "loop", "hide"}:
+        raise ValueError("screen.video_end must be 'hold', 'loop', or 'hide'")
+    if video_path is None and video_end != "hold":
+        raise ValueError("screen.video_end requires screen.video_path")
+    if not isinstance(content_fit, str) or content_fit not in {"stretch", "contain", "cover"}:
+        raise ValueError("screen.content_fit must be 'stretch', 'contain', or 'cover'")
+
+
 @dataclass
 class ScreenConfig:
     distance_mul: float = 2.0  # screen distance, in depth_scale units
@@ -128,6 +148,13 @@ class ScreenConfig:
     border_color: BorderColor = (0, 200, 255)
     border_thickness: int = 0
 
+    # Dynamic content is appended to preserve existing positional construction.
+    # ``video_end`` controls only a configuration-created video source; injected
+    # real-time sources own their own availability policy.
+    video_path: str | None = None
+    video_end: str = "hold"  # hold | loop | hide
+    content_fit: str = "stretch"  # stretch | contain | cover
+
     def validate(self) -> None:
         for name in ("distance_mul", "width_mul", "height_mul", "depth_scale", "min_size_px"):
             _positive_finite(f"screen.{name}", getattr(self, name))
@@ -136,10 +163,12 @@ class ScreenConfig:
             raise ValueError("screen.alpha must be between 0 and 1")
         if self.focal_length is not None:
             _positive_finite("screen.focal_length", self.focal_length)
-        if self.texture_path is not None and (
-            not isinstance(self.texture_path, str) or not self.texture_path.strip()
-        ):
-            raise ValueError("screen.texture_path must be a non-empty path or None")
+        _validate_screen_content(
+            self.texture_path,
+            self.video_path,
+            self.video_end,
+            self.content_fit,
+        )
         _integer(
             "screen.border_thickness",
             self.border_thickness,
@@ -156,7 +185,7 @@ class ScreenConfig:
 
 @dataclass
 class FilterConfig:
-    kind: str = "fir"  # fir | oneeuro | none
+    kind: str = "fir"  # fir | kalman | oneeuro | none
     smooth_translation: bool = True  # also smooth the face centre/size, not just angles
 
     # FIR (Kaiser window low-pass)
@@ -171,11 +200,19 @@ class FilterConfig:
     beta: float = 0.3
     d_cutoff: float = 1.0
 
+    # Constant-angular-velocity Kalman (registered A100 design)
+    acceleration_std: float = 100.0  # degrees / second^2
+    measurement_std: float = 1.0  # degrees
+
     def validate(self, fps: float | None = None) -> None:
         kind = self.kind.strip().lower() if isinstance(self.kind, str) else ""
-        if kind not in {"fir", "oneeuro", "none", "off", "passthrough"}:
+        if kind not in {"fir", "kalman", "oneeuro", "none", "off", "passthrough"}:
             raise ValueError(f"unknown filter kind: {self.kind!r}")
         _booleans((("filter.smooth_translation", self.smooth_translation),))
+        if kind == "kalman" and self.smooth_translation:
+            raise ValueError(
+                "filter kind 'kalman' smooths attitude only; set filter.smooth_translation=False"
+            )
 
         for name in (
             "cutoff_hz",
@@ -183,6 +220,8 @@ class FilterConfig:
             "ripple_db",
             "min_cutoff",
             "d_cutoff",
+            "acceleration_std",
+            "measurement_std",
         ):
             _positive_finite(f"filter.{name}", getattr(self, name))
         for name in ("pitch_cutoff_scale", "roll_cutoff_scale"):
@@ -280,6 +319,7 @@ class PipelineConfig:
                 ("output", self.output),
                 ("plot_path", self.plot_path),
                 ("screen.texture_path", self.screen.texture_path),
+                ("screen.video_path", self.screen.video_path),
             )
         )
         _validate_audio(self.preserve_audio, input_path, self.output)

@@ -6,8 +6,29 @@ All notable changes are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- A production `kalman` filter implementing the registered A100
+  constant-angular-velocity attitude design, extended with pipeline-measured
+  webcam frame intervals, angle unwrapping, explicit reset behavior, and no
+  fixed frame delay.
+- Timestamp-addressed screen-video playback through `--screen-video`, with
+  explicit hold, loop, hide, stretch, contain, and cover policies.
+- An intentionally narrow live-content seam: callbacks receive the scene
+  packet index and presentation time, while `LatestFrameSource` provides a
+  thread-safe capacity-one slot for freshness-first webcam rendering.
+- A visual live-content exercise and a deterministic component receipt for
+  latest-frame replacement, zero-conversion BGR preparation, frame mapping,
+  compositing determinism, and timing.
+
 ### Changed
 
+- Dynamic screen content now advances on every emitted scene packet, including
+  detection gaps, and configured content videos remain aligned through offline
+  FIR buffering.
+- Opaque contiguous `uint8` BGR content uses a no-conversion preparation path,
+  one ROI color warp, destination-space coverage, and measured content/render
+  timings in `RunSummary`.
 - Reframed the README around head-pose-driven virtual-screen rendering, with
   temporal stabilization presented as one supporting subsystem rather than the
   project's identity.

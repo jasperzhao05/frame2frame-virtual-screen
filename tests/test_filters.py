@@ -2,7 +2,12 @@ import numpy as np
 import pytest
 
 from frame2frame.config import FilterConfig
-from frame2frame.filters import FIRAttitudeFilter, _wrap_step, create_filter
+from frame2frame.filters import (
+    FIRAttitudeFilter,
+    KalmanAttitudeFilter,
+    _wrap_step,
+    create_filter,
+)
 
 
 def _run(filt, signal):
@@ -43,12 +48,18 @@ def test_group_delay_matches_tap_count():
     ("kind", "group_delay"),
     [
         pytest.param("fir", None, id="fir"),
+        pytest.param("kalman", 0, id="kalman"),
         pytest.param("oneeuro", 0, id="oneeuro"),
         pytest.param("none", 0, id="passthrough"),
     ],
 )
 def test_all_filters_support_the_tracker_operations(kind, group_delay):
-    filt = create_filter(30.0, FilterConfig(kind=kind))
+    cfg = (
+        FilterConfig(kind=kind, smooth_translation=False)
+        if kind == "kalman"
+        else FilterConfig(kind=kind)
+    )
+    filt = create_filter(30.0, cfg)
 
     assert isinstance(filt.group_delay, int)
     if group_delay is not None:
@@ -115,6 +126,90 @@ def test_oneeuro_rejects_invalid_wall_clock_timestep(dt):
         filt.update(0.0, 0.0, 0.0, dt=dt)
 
 
+def _experiment_kalman_reference(signal, fps=30.0, dts=None):
+    """Frozen NumPy equations from the registered BIWI A100 experiment."""
+    state = None
+    covariance = None
+    previous = None
+    output = []
+    acceleration_variance = 100.0**2
+    measurement_variance = 1.0**2
+    intervals = [1.0 / fps] * len(signal) if dts is None else dts
+    for raw, dt in zip(signal, intervals):
+        value = float(raw)
+        if previous is not None:
+            value = previous + (value - previous + 180.0) % 360.0 - 180.0
+        previous = value
+        if state is None:
+            state = np.array([value, 0.0], dtype=np.float64)
+            covariance = np.diag([measurement_variance, acceleration_variance])
+        else:
+            transition = np.array([[1.0, dt], [0.0, 1.0]], dtype=np.float64)
+            acceleration = np.array([0.5 * dt * dt, dt], dtype=np.float64)
+            process = np.outer(acceleration, acceleration) * acceleration_variance
+            state = transition @ state
+            covariance = transition @ covariance @ transition.T + process
+            innovation_variance = covariance[0, 0] + measurement_variance
+            gain = covariance[:, 0] / innovation_variance
+            state += gain * (value - state[0])
+            covariance -= np.outer(gain, covariance[0, :])
+        output.append(float(state[0]))
+    return np.asarray(output)
+
+
+def test_kalman_matches_registered_a100_experiment_at_nominal_dt():
+    signal = np.array([0.0, 4.0, 7.0, 5.0, -2.0, 178.0, -179.0, -175.0])
+    filt = create_filter(
+        30.0,
+        FilterConfig(kind="kalman", smooth_translation=False),
+    )
+
+    actual = np.array([filt.update(value, 0.0, 0.0)[0] for value in signal])
+
+    assert actual == pytest.approx(_experiment_kalman_reference(signal), abs=1e-12)
+
+
+def test_kalman_uses_actual_dt_and_has_no_fixed_group_delay():
+    signal = np.array([0.0, 10.0, 13.0, -4.0, 8.0])
+    dts = [0.01, 0.2, 0.04, 0.12, 0.03]
+    filt = create_filter(30.0, FilterConfig(kind="kalman", smooth_translation=False))
+
+    actual = np.array([filt.update(value, 0.0, 0.0, dt=dt)[0] for value, dt in zip(signal, dts)])
+
+    assert actual == pytest.approx(
+        _experiment_kalman_reference(signal, dts=dts),
+        abs=1e-12,
+    )
+    assert filt.group_delay == 0
+    assert filt.uses_timestamps is True
+
+
+def test_kalman_wraps_resets_and_leaves_position_unchanged():
+    filt = create_filter(30.0, FilterConfig(kind="kalman", smooth_translation=False))
+    filt.update(179.0, 0.0, 0.0)
+    wrapped = filt.update(-179.0, 0.0, 0.0)[0]
+    assert 179.0 < wrapped < 182.0
+    assert filt.update_position(40.0, 50.0, 60.0, dt=0.2) == (40.0, 50.0, 60.0)
+
+    filt.reset()
+    assert filt.update(-25.0, 2.0, 3.0) == (-25.0, 2.0, 3.0)
+
+
+@pytest.mark.parametrize("dt", [0, -0.1, float("nan"), float("inf")])
+def test_kalman_rejects_invalid_wall_clock_timestep(dt):
+    filt = create_filter(30.0, FilterConfig(kind="kalman", smooth_translation=False))
+
+    with pytest.raises(ValueError, match="Kalman dt"):
+        filt.update(0.0, 0.0, 0.0, dt=dt)
+
+
+def test_kalman_direct_constructor_uses_registered_defaults():
+    filt = KalmanAttitudeFilter(30.0)
+
+    assert filt.group_delay == 0
+    assert filt.update(1.0, 2.0, 3.0) == (1.0, 2.0, 3.0)
+
+
 def test_none_passes_through():
     filt = create_filter(30.0, FilterConfig(kind="none"))
     assert filt.update(3.0, 4.0, 5.0) == (3.0, 4.0, 5.0)
@@ -142,6 +237,8 @@ def test_filters_reject_invalid_frame_rates(fps):
         create_filter(fps, FilterConfig(kind="fir"))
     with pytest.raises(ValueError, match="fps must be"):
         create_filter(fps, FilterConfig(kind="oneeuro"))
+    with pytest.raises(ValueError, match="fps must be"):
+        create_filter(fps, FilterConfig(kind="kalman", smooth_translation=False))
     with pytest.raises(ValueError, match="fps must be"):
         create_filter(fps, FilterConfig(kind="none"))
 

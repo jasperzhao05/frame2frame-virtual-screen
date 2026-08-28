@@ -52,7 +52,16 @@ def test_prepare_texture_accepts_grayscale():
 
     assert prepared.bgr.shape == (1, 2, 3)
     assert prepared.bgr[0, :, 0].tolist() == [10, 20]
-    assert np.all(prepared.alpha == 1)
+    assert prepared.alpha is None
+
+
+def test_uint8_bgr_uses_the_zero_copy_opaque_fast_path():
+    texture = np.zeros((20, 30, 3), np.uint8)
+
+    prepared = textures.prepare_texture(texture)
+
+    assert np.shares_memory(prepared.bgr, texture)
+    assert prepared.alpha is None
 
 
 def test_prepare_texture_accepts_default_integer_numpy_arrays():

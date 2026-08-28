@@ -7,6 +7,8 @@ videos.
 ## What stays local
 
 - File and webcam frames are decoded in the local process.
+- Built-in image and screen-video content is decoded in the local process;
+  screen-video audio is ignored.
 - Pose inference and rendering run on the local machine.
 - Face landmarks and pose observations are held in memory for processing and
   optional plotting; no face template or identity database is created.
@@ -18,6 +20,11 @@ Webcam mode writes a video when an output path is configured. Use the Python
 configuration entry point with `output=None` if only a live display is intended,
 and remember that other screen-recording or operating-system software is
 outside this project's control.
+
+Caller-injected content callbacks and producers may perform their own network,
+capture, or storage operations. Those caller-defined behaviors are outside the
+project's local-only guarantee; `frame2frame` receives only the arrays they
+return or publish.
 
 ## Network access
 

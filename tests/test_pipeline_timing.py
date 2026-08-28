@@ -73,6 +73,125 @@ def test_delay_compensation_advances_on_every_video_frame(monkeypatch, tmp_path)
     assert len(smoother.history) == 7  # five frames plus two EOF padding samples
 
 
+def test_dynamic_content_uses_the_pending_packet_media_time_with_fir(
+    monkeypatch,
+    tmp_path,
+):
+    reader = SequenceReader(6)
+    smoother = DelayedFilter()
+    requests = []
+    rendered = []
+    RecordingWriter.instances.clear()
+    monkeypatch.setattr(pipeline, "_open_reader", lambda cfg: reader)
+    monkeypatch.setattr(pipeline, "create_filter", lambda fps, cfg: smoother)
+    monkeypatch.setattr(pipeline, "VideoWriter", RecordingWriter)
+    monkeypatch.setattr(pipeline, "install_video", lambda processed, output: str(output))
+    monkeypatch.setattr(
+        pipeline.render,
+        "draw_virtual_screen",
+        lambda frame, observation, cfg, content, *, opacity: rendered.append(
+            (int(frame[0, 0, 0]), int(content.bgr[0, 0, 0]))
+        ),
+    )
+
+    def content_source(request):
+        requests.append((request.frame_index, request.media_time_seconds, request.live))
+        return np.full((2, 2, 3), request.frame_index, np.uint8)
+
+    class Estimator:
+        def estimate(self, frame):
+            return _observation(int(frame[0, 0, 0]))
+
+    summary = pipeline.run(
+        _config(
+            output=str(tmp_path / "output.mp4"),
+            draw_axis=False,
+            draw_screen=True,
+        ),
+        estimator=Estimator(),
+        content_source=content_source,
+    )
+
+    assert rendered == [(index, index) for index in range(6)]
+    assert requests == [(index, pytest.approx(index / reader.fps), False) for index in range(6)]
+    assert summary.content_samples == 6
+    assert summary.render_samples == 6
+    assert summary.mean_content_ms >= 0
+    assert summary.mean_render_ms >= 0
+
+
+def test_dynamic_content_clock_advances_through_detection_gaps(monkeypatch, tmp_path):
+    reader = SequenceReader(8)
+    requested = []
+    rendered = []
+    RecordingWriter.instances.clear()
+    monkeypatch.setattr(pipeline, "_open_reader", lambda cfg: reader)
+    monkeypatch.setattr(pipeline, "VideoWriter", RecordingWriter)
+    monkeypatch.setattr(pipeline, "install_video", lambda processed, output: str(output))
+    monkeypatch.setattr(
+        pipeline.render,
+        "draw_virtual_screen",
+        lambda frame, observation, cfg, content, *, opacity: rendered.append(
+            (int(frame[0, 0, 0]), int(content.bgr[0, 0, 0]))
+        ),
+    )
+
+    def content_source(request):
+        requested.append(request.frame_index)
+        return np.full((2, 2, 3), request.frame_index, np.uint8)
+
+    class Estimator:
+        def estimate(self, frame):
+            index = int(frame[0, 0, 0])
+            return _observation(index) if index in {0, 7} else None
+
+    pipeline.run(
+        _config(
+            output=str(tmp_path / "output.mp4"),
+            draw_axis=False,
+            draw_screen=True,
+            dropout_hold_seconds=0.2,
+            dropout_reset_seconds=0.5,
+        ),
+        estimator=Estimator(),
+        content_source=content_source,
+    )
+
+    assert requested == list(range(8))
+    assert all(scene_index == content_index for scene_index, content_index in rendered)
+    assert rendered[-1] == (7, 7)
+
+
+def test_content_sampler_reprepares_a_reused_grayscale_buffer():
+    buffer = np.zeros((2, 3), np.uint8)
+    sampler = pipeline._ContentSampler(lambda request: buffer)
+
+    first = sampler.sample(pipeline.ContentRequest(0, 0.0, False))
+    buffer.fill(91)
+    second = sampler.sample(pipeline.ContentRequest(1, 0.1, False))
+
+    assert first is not None and second is not None
+    assert int(first.bgr[0, 0, 0]) == 0
+    assert int(second.bgr[0, 0, 0]) == 91
+
+
+def test_content_sampler_reprepares_a_reused_bgra_buffer():
+    buffer = np.zeros((2, 3, 4), np.uint8)
+    sampler = pipeline._ContentSampler(lambda request: buffer)
+
+    first = sampler.sample(pipeline.ContentRequest(0, 0.0, False))
+    buffer[..., :3] = (11, 22, 33)
+    buffer[..., 3] = 204
+    second = sampler.sample(pipeline.ContentRequest(1, 0.1, False))
+
+    assert first is not None and first.alpha is not None
+    assert second is not None and second.alpha is not None
+    np.testing.assert_array_equal(first.bgr[0, 0], (0, 0, 0))
+    np.testing.assert_array_equal(second.bgr[0, 0], (11, 22, 33))
+    assert float(first.alpha[0, 0]) == 0.0
+    assert float(second.alpha[0, 0]) == pytest.approx(0.8)
+
+
 def test_sparse_detections_keep_wall_clock_delay_and_queue_bounded(monkeypatch, tmp_path):
     reader = SequenceReader(75)
     reader.fps = 30.0
@@ -155,7 +274,11 @@ def test_short_detection_gap_holds_and_fades_only_the_screen(monkeypatch, tmp_pa
     monkeypatch.setattr(pipeline, "_open_reader", lambda cfg: reader)
     monkeypatch.setattr(pipeline, "VideoWriter", RecordingWriter)
     monkeypatch.setattr(pipeline, "install_video", lambda processed, output: str(output))
-    monkeypatch.setattr(pipeline, "_load_content", lambda cfg: object())
+    monkeypatch.setattr(
+        pipeline,
+        "_load_content",
+        lambda cfg: np.zeros((1, 1, 3), np.uint8),
+    )
     monkeypatch.setattr(
         pipeline.render,
         "draw_virtual_screen",
@@ -216,6 +339,7 @@ def test_file_source_passes_deterministic_frame_timestamps(monkeypatch, tmp_path
 def test_webcam_source_passes_monotonic_capture_timestamps(monkeypatch, tmp_path):
     reader = SequenceReader(2)
     timestamps = []
+    content_requests = []
     clock = iter([10.0, 10.05, 10.17])
     RecordingWriter.instances.clear()
     monkeypatch.setattr(pipeline, "_open_reader", lambda cfg: reader)
@@ -233,11 +357,18 @@ def test_webcam_source_passes_monotonic_capture_timestamps(monkeypatch, tmp_path
             input=None,
             webcam=0,
             output=str(tmp_path / "output.mp4"),
+            draw_screen=True,
         ),
         estimator=Estimator(),
+        content_source=lambda request: content_requests.append(request) or None,
     )
 
     assert timestamps == pytest.approx([50.0, 170.0])
+    assert [request.frame_index for request in content_requests] == [0, 1]
+    assert [request.media_time_seconds for request in content_requests] == pytest.approx(
+        [0.05, 0.17]
+    )
+    assert all(request.live for request in content_requests)
 
 
 def test_webcam_dropout_fade_uses_elapsed_time_not_nominal_frame_count(
@@ -251,7 +382,11 @@ def test_webcam_dropout_fade_uses_elapsed_time_not_nominal_frame_count(
     monkeypatch.setattr(pipeline, "_open_reader", lambda cfg: reader)
     monkeypatch.setattr(pipeline, "VideoWriter", RecordingWriter)
     monkeypatch.setattr(pipeline, "install_video", lambda processed, output: str(output))
-    monkeypatch.setattr(pipeline, "_load_content", lambda cfg: object())
+    monkeypatch.setattr(
+        pipeline,
+        "_load_content",
+        lambda cfg: np.zeros((1, 1, 3), np.uint8),
+    )
     monkeypatch.setattr(pipeline.time, "monotonic", lambda: next(clock))
     monkeypatch.setattr(
         pipeline.render,

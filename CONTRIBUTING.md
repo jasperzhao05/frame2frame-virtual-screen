@@ -36,6 +36,7 @@ mypy
 python -m pytest -q -m "not integration" --cov=frame2frame --cov-report=term-missing
 python -m scripts.benchmark_smoothing --check
 python -m scripts.benchmark_pipeline --check
+python -m scripts.benchmark_dynamic_content --check
 ```
 
 Ruff enforces a McCabe complexity ceiling of 10. Treat that limit as a design
@@ -112,12 +113,13 @@ contracts cross module boundaries.
 | Filters | `python -m pytest -q tests/test_filters.py tests/test_pipeline_timing.py` | smoothing benchmark |
 | Geometry | `python -m pytest -q tests/test_geometry.py` | render tests, synthetic demo, and pipeline benchmark |
 | Texture or compositing | `python -m pytest -q tests/test_textures.py tests/test_render.py` | geometry tests and synthetic demo |
+| Screen-content sources | `python -m pytest -q tests/test_content.py tests/test_pipeline_timing.py tests/test_pipeline_resources.py` | dynamic-content benchmark and live visual exercise |
 | Pipeline timing or dropout | `python -m pytest -q tests/test_pipeline_timing.py tests/test_pipeline_diagnostics.py` | smoke tests and pipeline benchmark |
 | Resource cleanup or publication | `python -m pytest -q tests/test_pipeline_resources.py tests/test_pipeline_publish.py` | failure-path review |
 | Video reader/writer or audio | `python -m pytest -q tests/test_video_io.py tests/test_audio.py` | `python -m pytest -q -m integration` when applicable |
 | Pose adapters or registry | `python -m pytest -q tests/test_pose_helpers.py` | scripted smoke test and attributed real-video receipt |
 | Dependencies or metadata | `python -m pytest -q tests/test_packaging.py` | build, Twine, and clean installs |
-| Benchmark protocol | `python -m pytest -q tests/test_benchmark.py tests/test_pipeline_benchmark.py` | both benchmark `--check` commands and schema review |
+| Benchmark protocol | `python -m pytest -q tests/test_benchmark.py tests/test_pipeline_benchmark.py tests/test_dynamic_content_benchmark.py` | all benchmark `--check` commands and schema review |
 | README or distributed docs | `python -m pytest -q tests/test_packaging.py` | build and Twine rendering check |
 
 ## Pull-request checklist
@@ -178,6 +180,11 @@ contracts. Keep its synthetic pose envelope, dropout schedule, decoded-pixel
 digest rule, and frame-conservation checks stable within a minor release. Its
 reported throughput has no pass/fail floor and must not be labeled as backend
 FPS or camera latency. See `docs/RELIABILITY.md` before changing that protocol.
+
+`scripts/benchmark_dynamic_content.py` protects capacity-one latest-frame
+storage, zero-conversion BGR preparation, nominal frame mapping, and repeatable
+compositing. Its p50/p95 values are machine-specific component timings, never
+portable gates or end-to-end camera-to-display latency.
 
 ## Test readability
 

@@ -11,10 +11,10 @@ def test_help_does_not_initialize_a_pose_backend(capsys):
         cli.main(["--help"])
 
     assert exc.value.code == 0
-    assert "Render a head-locked virtual screen" in capsys.readouterr().out
+    assert "Render a head-relative virtual screen" in capsys.readouterr().out
 
 
-def test_cli_translates_flags_to_pipeline_config(monkeypatch, tmp_path):
+def test_cli_translates_flags_to_pipeline_config(monkeypatch, tmp_path, capsys):
     captured = {}
 
     def fake_run(config):
@@ -24,6 +24,10 @@ def test_cli_translates_flags_to_pipeline_config(monkeypatch, tmp_path):
             faces=10,
             fps=24.0,
             mean_inference_ms=4.5,
+            mean_content_ms=0.02,
+            mean_render_ms=0.8,
+            content_samples=12,
+            render_samples=10,
             output=config.output,
         )
 
@@ -50,6 +54,12 @@ def test_cli_translates_flags_to_pipeline_config(monkeypatch, tmp_path):
                 "1.5",
                 "--focal-length-px",
                 "812.5",
+                "--screen-video",
+                "interface.mp4",
+                "--screen-video-end",
+                "loop",
+                "--screen-fit",
+                "contain",
                 "--cutoff",
                 "3.25",
                 "--no-smooth-translation",
@@ -83,10 +93,17 @@ def test_cli_translates_flags_to_pipeline_config(monkeypatch, tmp_path):
     assert config.screen.width_mul == 3.0
     assert config.screen.height_mul == 1.5
     assert config.screen.focal_length == 812.5
+    assert config.screen.video_path == "interface.mp4"
+    assert config.screen.video_end == "loop"
+    assert config.screen.content_fit == "contain"
     assert config.draw_screen is False
     assert config.draw_axis is True
     assert config.draw_bbox is True
     assert config.plot_path is None
+    stdout = capsys.readouterr().out
+    assert "content: 0.020 ms/sample" in stdout
+    assert "render: 0.800 ms/attempt" in stdout
+    assert "attempts: 10" in stdout
 
 
 def test_cli_screen_defaults_match_the_configuration_contract():
@@ -96,6 +113,17 @@ def test_cli_screen_defaults_match_the_configuration_contract():
     assert config.screen == cli.ScreenConfig()
 
 
+def test_cli_kalman_selects_the_attitude_only_registered_design():
+    args = cli.build_parser().parse_args(["--input", "input.mp4", "--filter", "kalman"])
+    config = cli.config_from_args(args)
+
+    assert config.filter.kind == "kalman"
+    assert config.filter.acceleration_std == 100.0
+    assert config.filter.measurement_std == 1.0
+    assert config.filter.smooth_translation is False
+    config.validate(fps=30.0)
+
+
 def test_cli_requires_exactly_one_input_source():
     parser = cli.build_parser()
 
@@ -103,6 +131,15 @@ def test_cli_requires_exactly_one_input_source():
         parser.parse_args([])
     with pytest.raises(SystemExit):
         parser.parse_args(["--input", "clip.mp4", "--webcam", "0"])
+
+
+def test_cli_rejects_two_screen_content_files():
+    parser = cli.build_parser()
+
+    with pytest.raises(SystemExit):
+        parser.parse_args(
+            ["--input", "clip.mp4", "--texture", "screen.png", "--screen-video", "ui.mp4"]
+        )
 
 
 def test_version_does_not_require_an_input(capsys):

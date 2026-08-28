@@ -2,8 +2,10 @@
 
 ``fir`` is the project's default and namesake: a linear-phase Kaiser-window
 low-pass run per axis (roll is smoothed hardest because it is the noisiest axis
-out of the pose estimators). ``oneeuro`` trades a little jitter for much lower
-latency and suits the live webcam path where group delay is felt.
+out of the pose estimators). ``kalman`` is the project's registered causal live
+candidate; ``oneeuro`` remains available as a speed-adaptive
+compatibility option. Both consume elapsed sample time and introduce no fixed
+frame delay.
 """
 
 from __future__ import annotations
@@ -239,6 +241,129 @@ class OneEuroFilter:
         )
 
 
+class _KalmanAxis:
+    """Constant-angular-velocity Kalman estimator for one Euler channel."""
+
+    def __init__(
+        self,
+        fps: float,
+        acceleration_std: float,
+        measurement_std: float,
+    ) -> None:
+        self.fps = float(fps)
+        self.acceleration_variance = float(acceleration_std) ** 2
+        self.measurement_variance = float(measurement_std) ** 2
+        self.reset()
+
+    def reset(self) -> None:
+        self._angle: float | None = None
+        self._velocity = 0.0
+        self._p00 = self.measurement_variance
+        self._p01 = 0.0
+        self._p10 = 0.0
+        self._p11 = self.acceleration_variance
+        self._raw_previous: float | None = None
+
+    def _validated_dt(self, dt: float | None) -> float:
+        interval = 1.0 / self.fps if dt is None else float(dt)
+        if not math.isfinite(interval) or interval <= 0:
+            raise ValueError("Kalman dt must be a positive finite number")
+        return interval
+
+    def update(self, raw: float, *, dt: float | None = None) -> float:
+        interval = self._validated_dt(dt)
+        value = float(raw)
+        if self._raw_previous is not None:
+            value = self._raw_previous + (value - self._raw_previous + 180.0) % 360.0 - 180.0
+        self._raw_previous = value
+
+        if self._angle is None:
+            # Match the registered A100 configuration: measurement uncertainty for
+            # angle, acceleration uncertainty for initial angular velocity.
+            self._angle = value
+            return value
+
+        acceleration = 0.5 * interval * interval
+        process_scale = self.acceleration_variance
+
+        predicted_angle = self._angle + interval * self._velocity
+        predicted_velocity = self._velocity
+        predicted_p00 = (
+            self._p00
+            + interval * (self._p01 + self._p10)
+            + interval * interval * self._p11
+            + acceleration * acceleration * process_scale
+        )
+        predicted_p01 = self._p01 + interval * self._p11 + acceleration * interval * process_scale
+        predicted_p10 = self._p10 + interval * self._p11 + acceleration * interval * process_scale
+        predicted_p11 = self._p11 + interval * interval * process_scale
+
+        innovation_variance = predicted_p00 + self.measurement_variance
+        angle_gain = predicted_p00 / innovation_variance
+        velocity_gain = predicted_p10 / innovation_variance
+        innovation = value - predicted_angle
+        self._angle = predicted_angle + angle_gain * innovation
+        self._velocity = predicted_velocity + velocity_gain * innovation
+
+        # Same covariance update as the registered A100 configuration:
+        # P <- P - outer(K, P[0, :]).
+        self._p00 = predicted_p00 - angle_gain * predicted_p00
+        self._p01 = predicted_p01 - angle_gain * predicted_p01
+        self._p10 = predicted_p10 - velocity_gain * predicted_p00
+        self._p11 = predicted_p11 - velocity_gain * predicted_p01
+        return self._angle
+
+
+class KalmanAttitudeFilter:
+    """Three-axis causal Kalman filter matching the registered A100 design.
+
+    The state model is constant angular velocity with acceleration standard
+    deviation 100 degrees/s^2 and measurement standard deviation 1 degree by
+    default.  It intentionally leaves face centre and size unchanged.
+    """
+
+    uses_timestamps = True
+
+    def __init__(self, fps: float, cfg: FilterConfig | None = None) -> None:
+        cfg = cfg or FilterConfig(kind="kalman", smooth_translation=False)
+        cfg.validate(fps)
+        self._axes = tuple(
+            _KalmanAxis(fps, cfg.acceleration_std, cfg.measurement_std) for _ in range(3)
+        )
+
+    @property
+    def group_delay(self) -> int:
+        return 0
+
+    def reset(self) -> None:
+        for axis in self._axes:
+            axis.reset()
+
+    def update(
+        self,
+        yaw: float,
+        pitch: float,
+        roll: float,
+        *,
+        dt: float | None = None,
+    ) -> PoseValues:
+        values = (yaw, pitch, roll)
+        return cast(
+            PoseValues, tuple(axis.update(value, dt=dt) for axis, value in zip(self._axes, values))
+        )
+
+    def update_position(
+        self,
+        cx: float,
+        cy: float,
+        size: float,
+        *,
+        dt: float | None = None,
+    ) -> PoseValues:
+        del dt
+        return cx, cy, size
+
+
 class PassThrough:
     @property
     def group_delay(self) -> int:
@@ -277,5 +402,7 @@ def create_filter(fps: float, cfg: FilterConfig | None = None) -> _PoseFilter:
         return FIRAttitudeFilter(fps, cfg)
     if kind == "oneeuro":
         return OneEuroFilter(fps, cfg)
+    if kind == "kalman":
+        return KalmanAttitudeFilter(fps, cfg)
     cfg.validate(fps)
     return PassThrough()
