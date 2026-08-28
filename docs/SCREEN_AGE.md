@@ -89,7 +89,7 @@ python scripts/make_screen_age_figure.py \
 The generator uses only the Python standard library and emits a deterministic,
 standalone SVG with no scripts or external resources. It verifies the still by
 SHA-256 before embedding it. The README uses a 1360×816 PNG preview for
-consistent browser rendering at a centered 680-pixel display width; the preview
+consistent browser rendering at a centered 640-pixel display width; the preview
 links to the vector source.
 
 ## Evidence boundary and data source

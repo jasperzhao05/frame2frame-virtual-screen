@@ -32,8 +32,8 @@ use headset telemetry, eye gaze, SLAM, or world anchors.
 
 <p align="center">
   <img
-    src="https://raw.githubusercontent.com/jasperzhao05/frame2frame-virtual-screen/main/docs/demo-rokid-outdoor.webp"
-    width="680"
+    src="https://raw.githubusercontent.com/jasperzhao05/frame2frame-virtual-screen/main/docs/demo-rokid-outdoor.gif"
+    width="560"
     alt="Two real AR-glasses scenes shown as original footage beside distance-4 frame2frame output"
   >
 </p>
@@ -79,7 +79,7 @@ frozen before held-out evaluation and reported in frames and milliseconds.
   <a href="https://github.com/jasperzhao05/frame2frame-virtual-screen/blob/main/docs/screen-age.svg">
     <img
       src="https://raw.githubusercontent.com/jasperzhao05/frame2frame-virtual-screen/main/docs/screen-age.png"
-      width="680"
+      width="640"
       alt="A real-person projected-screen worldline beside a compact calibration plot of analytic FIR delay against recovered Screen Age"
     >
   </a>

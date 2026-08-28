@@ -142,5 +142,5 @@ def test_source_manifest_includes_screen_age_publication_assets():
 
     assert all(
         pattern in docs_rule.split()
-        for pattern in ("*.gif", "*.jpg", "*.json", "*.md", "*.png", "*.svg", "*.webp")
+        for pattern in ("*.gif", "*.jpg", "*.json", "*.md", "*.png", "*.svg")
     )
