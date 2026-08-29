@@ -41,7 +41,7 @@ open-source repository is not affiliated with or endorsed by Rokid or Vuzix.
 
 <p align="center">
   <img
-    src="https://raw.githubusercontent.com/jasperzhao05/frame2frame-virtual-screen/main/docs/demo-vuzix-outdoor.gif"
+    src="https://raw.githubusercontent.com/jasperzhao05/frame2frame-virtual-screen/612820b5583c5380c9d7c64b587ff6481a981202/docs/demo-vuzix-outdoor.gif"
     width="500"
     alt="A real AR-glasses scene shown beside FIR distance-4 output playing Black Myth Wukong content"
   >
