@@ -41,7 +41,7 @@ open-source repository is not affiliated with or endorsed by Rokid.
 
 <p align="center">
   <img
-    src="https://raw.githubusercontent.com/jasperzhao05/frame2frame-virtual-screen/main/docs/demo-rokid-outdoor.webp"
+    src="https://raw.githubusercontent.com/jasperzhao05/frame2frame-virtual-screen/main/docs/demo-rokid-outdoor.gif"
     width="560"
     alt="Two real AR-glasses scenes shown beside FIR distance-4 output playing Black Myth Wukong content"
   >
