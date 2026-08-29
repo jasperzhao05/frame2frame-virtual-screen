@@ -35,29 +35,27 @@ independent open-source rebuild. It is a visualization pipeline, not a headset
 integration. It never reads headset output: the image, video, or live
 application frames shown on the virtual screen must be supplied separately. It
 does not use headset telemetry, eye gaze, SLAM, or world anchors. This
-open-source repository is not affiliated with or endorsed by Rokid.
+open-source repository is not affiliated with or endorsed by Rokid or Vuzix.
 
 ### Virtual screen in motion
 
 <p align="center">
   <img
-    src="https://raw.githubusercontent.com/jasperzhao05/frame2frame-virtual-screen/main/docs/demo-rokid-outdoor.gif"
-    width="560"
-    alt="Two real AR-glasses scenes shown beside FIR distance-4 output playing Black Myth Wukong content"
+    src="https://raw.githubusercontent.com/jasperzhao05/frame2frame-virtual-screen/main/docs/demo-vuzix-outdoor.gif"
+    width="500"
+    alt="A real AR-glasses scene shown beside FIR distance-4 output playing Black Myth Wukong content"
   >
 </p>
 
-*Two outdoor clips, six seconds total at 20 fps. Original footage appears on
-the left; MediaPipe + FIR output at screen distance 4 appears on the right. A
-separately supplied* Black Myth: Wukong *video advances on the projected
-screen. Neither clip uses per-frame reframing, manual screen keyframing, slow
+*One continuous outdoor clip, 4.45 seconds at 20 fps. Original footage appears
+on the left; MediaPipe + FIR output at screen distance 4 appears on the right.
+A separately supplied* Black Myth: Wukong *video advances on the projected
+screen. The clip uses no per-frame reframing, manual screen keyframing, slow
 motion, interpolation, or reversed footage.*
 
-*Wearer footage: BooredAtWork,
-[“Rokid Glasses 2025 – Next Level Augmented Reality Experience!”](https://www.youtube.com/watch?v=abE88Vve0o4),
-and Naomi Wu,
+*Wearer footage: Naomi Wu,
 [“Vuzix Blade Review—Wearable Display for a Cyberpunk Future!”](https://www.youtube.com/watch?v=sS90qEPgc50),
-both [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). Screen content:
+[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). Screen content:
 Game Science,
 [“Black Myth: Wukong — 13 Minutes Official Gameplay Trailer”](https://www.youtube.com/watch?v=oRLhCxC886o).
 The gameplay is supplied content rendered by `frame2frame`, not headset output.

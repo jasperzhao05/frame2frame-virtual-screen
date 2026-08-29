@@ -97,43 +97,37 @@ license, and indicate that overlays/re-encoding modified the source.
 
 ### Derived AR use-case hero
 
-`docs/demo-rokid-outdoor.gif` combines two attributed wearer excerpts with
+`docs/demo-vuzix-outdoor.gif` combines one attributed wearer excerpt with
 separately supplied screen content:
 
-- 02:09.800–02:12.800 of BooredAtWork / Booredatwork.com's
-  [“Rokid Glasses 2025 – Next Level Augmented Reality Experience!”](https://www.youtube.com/watch?v=abE88Vve0o4),
-  also available through its
-  [Wikimedia Commons mirror](https://commons.wikimedia.org/wiki/File:Video_of_smart_glasses_%E2%80%93_the_Rokid_Glasses_in_2025_(with_augmented_reality).webm);
-  the original review disclosed sponsorship by Rokid;
-- 07:56.320–07:59.320 of Naomi 'SexyCyborg' Wu's
+- 07:55.480–07:59.920 of Naomi 'SexyCyborg' Wu's
   [“Vuzix Blade Review—Wearable Display for a Cyberpunk Future!”](https://www.youtube.com/watch?v=sS90qEPgc50),
-  used as the second wearer scene; and
-- 03:32.800–03:36.320 of Game Science's
+  used as the wearer scene; and
+- 03:32.800–03:37.240 of Game Science's
   [“Black Myth: Wukong — 13 Minutes Official Gameplay Trailer”](https://www.youtube.com/watch?v=oRLhCxC886o),
   used as separately supplied virtual-screen content.
 
-The archived original video metadata identifies both wearer works as Creative
+The archived original video metadata identifies the wearer work as Creative
 Commons Attribution 3.0. The repository does not assert a license to the Game
 Science excerpt. None of the source material is relicensed under the project's
 MIT license.
 
-Both wearer excerpts are muted and receive one fixed square presentation crop.
-The Rokid excerpt also receives one global light adjustment and a fixed blurred
-fill before inference. Both are processed with the MediaPipe canonical-face
-pose fit, the default FIR path, and screen distance 4. The game excerpt is
-sampled as dynamic screen content and fitted inside the existing 4×2 projected
-plane. Original and rendered panes are encoded side by side as a 560×280,
-256-color GIF with 120 presentation frames on a 20 fps timeline. Frames are
-selected from the 30 fps and 25 fps wearer sources without interpolation. No
-per-frame reframing, manual screen keyframes, slow motion, or reversed footage
-is used. Fresh pose observations were produced for all 90 Rokid frames and all
-75 Vuzix frames before presentation-rate conversion. These are per-clip
-operational measurements, not claims of pose accuracy or general robustness.
+The wearer excerpt is muted and receives one fixed 1080×1080 presentation
+crop. It is processed with the MediaPipe canonical-face pose fit, the default
+FIR path, and screen distance 4. The game excerpt is sampled as dynamic screen
+content and stretched across the existing 4×2 projected plane. Original and
+rendered panes are encoded side by side as a 960×480, 256-color GIF with 89
+presentation frames on a 20 fps timeline. Frames are selected from the 25 fps
+wearer source without interpolation. No per-frame reframing, manual screen
+keyframes, slow motion, or reversed footage is used. Fresh pose observations
+were produced for 110 of 111 source frames before presentation-rate
+conversion. These are per-clip operational measurements, not claims of pose
+accuracy or general robustness.
 
 The gameplay shown on the virtual screen is supplied software content; it is
 not Rokid or Vuzix device output or evidence of hardware integration. This
-independent project is not affiliated with or endorsed by BooredAtWork, Naomi
-Wu, Game Science, Rokid, or Vuzix. Black Myth: Wukong, Rokid, Vuzix, the source
+independent project is not affiliated with or endorsed by Naomi Wu, Game
+Science, Rokid, or Vuzix. Black Myth: Wukong, Rokid, Vuzix, the source
 footage, subject likenesses, and associated marks are the property of their
 respective rights holders and are not covered by this repository's MIT license.
 
