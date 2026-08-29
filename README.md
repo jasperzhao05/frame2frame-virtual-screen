@@ -47,7 +47,7 @@ open-source repository is not affiliated with or endorsed by Rokid or Vuzix.
   >
 </p>
 
-*One continuous outdoor clip, 4.45 seconds at 20 fps. Original footage appears
+*One continuous outdoor clip, 4.44 seconds at 16.7 fps. Original footage appears
 on the left; MediaPipe + FIR output at screen distance 4 appears on the right.
 A separately supplied* Black Myth: Wukong *video advances on the projected
 screen. The clip uses no per-frame reframing, manual screen keyframing, slow

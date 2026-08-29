@@ -116,8 +116,8 @@ The wearer excerpt is muted and receives one fixed 1080×1080 presentation
 crop. It is processed with the MediaPipe canonical-face pose fit, the default
 FIR path, and screen distance 4. The game excerpt is sampled as dynamic screen
 content and stretched across the existing 4×2 projected plane. Original and
-rendered panes are encoded side by side as a 960×480, 256-color GIF with 89
-presentation frames on a 20 fps timeline. Frames are selected from the 25 fps
+rendered panes are encoded side by side as a 960×480, 256-color GIF with 74
+presentation frames on a 16⅔ fps timeline. Frames are selected from the 25 fps
 wearer source without interpolation. No per-frame reframing, manual screen
 keyframes, slow motion, or reversed footage is used. Fresh pose observations
 were produced for 110 of 111 source frames before presentation-rate
