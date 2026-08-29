@@ -123,7 +123,7 @@ fill before inference. Both are processed with the MediaPipe canonical-face
 pose fit, the default FIR path, and screen distance 4. The game excerpt is
 sampled as dynamic screen content and fitted inside the existing 4×2 projected
 plane. Original and rendered panes are encoded side by side as a 560×280,
-lossy animated WebP with 90 presentation frames on a 15 fps timeline. Frames are
+high-quality animated WebP with 120 presentation frames on a 20 fps timeline. Frames are
 selected from the 30 fps and 25 fps wearer sources without interpolation. No
 per-frame reframing, manual screen keyframes, slow motion, or reversed footage
 is used. Fresh pose observations were produced for all 90 Rokid frames and all

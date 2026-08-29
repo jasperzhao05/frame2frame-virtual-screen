@@ -47,7 +47,7 @@ open-source repository is not affiliated with or endorsed by Rokid.
   >
 </p>
 
-*Two outdoor clips, six seconds total at 15 fps. Original footage appears on
+*Two outdoor clips, six seconds total at 20 fps. Original footage appears on
 the left; MediaPipe + FIR output at screen distance 4 appears on the right. A
 separately supplied* Black Myth: Wukong *video advances on the projected
 screen. Neither clip uses per-frame reframing, manual screen keyframing, slow
