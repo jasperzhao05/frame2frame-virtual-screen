@@ -1,0 +1,301 @@
+{
+  "protocol": {
+    "base_schema_version": 5,
+    "cells": 160,
+    "noisy_frames_per_policy": 36000,
+    "scope": "synthetic attitude-only noise sensitivity; no population or preference inference",
+    "seeds": [
+      20260730,
+      20260731,
+      20260732,
+      20260733,
+      20260734,
+      20260735,
+      20260736,
+      20260737,
+      20260738,
+      20260739,
+      20260740,
+      20260741,
+      20260742,
+      20260743,
+      20260744,
+      20260745,
+      20260746,
+      20260747,
+      20260748,
+      20260749
+    ],
+    "selection": "consecutive fixed seeds; identical policies; no per-cell retuning",
+    "std_definition": "sample standard deviation across seeds (ddof=1)",
+    "trials": 20
+  },
+  "provenance": {
+    "head": "d9b3096227be0ff6007804ae63a6a6e044aebef6",
+    "source_sha256": {
+      "frame2frame/__init__.py": "270ad0176911a7fe6b25dcfe9ca2e4c6ff7a6c8e2894df1166cc95dfe255e767",
+      "frame2frame/__main__.py": "307299fda7b77d22c64cb51430ec75e5f59d78e9c948786afb3b2544fe45e4b7",
+      "frame2frame/_diagnostics.py": "d36e70b3544d47811eaa09c9bdc5e8654137fbc49e26b1be8b691f274f162fbc",
+      "frame2frame/_doctor.py": "22cafd910c3c2d725831f1f957e9614ee5d771f9a342f75949a001faec40ef5e",
+      "frame2frame/_downloads.py": "5f7bcacd69256bde7c64cfeb88ec4f2986f72fff37c8680ee517d083c3bebd0a",
+      "frame2frame/_media.py": "a8416149faa0fe79f0f466823517ed0963231a35cb6564f4a067305bfaf3da48",
+      "frame2frame/_textures.py": "b36c869186e2e5c3d40371df18745bb6b13ae65bc8b81febc60ad02425859cc4",
+      "frame2frame/_tracking.py": "0a1b79f0d3e79a4c6ff6dd8d53cf3d6ab294b7f3da6eb21382d0733ffe63a2fb",
+      "frame2frame/_version.py": "137a2e4a4f509e6ddc1a1d21e72546456e4312847a24b30f46c9cbdc395be708",
+      "frame2frame/cli.py": "683ce4da2f8fad9bc01e81a5b67e801e4306e9f4ca3eabdfddabc7e22f3103d3",
+      "frame2frame/config.py": "924c19d1e59f817bac965c0e40d7b52844f531f845770cb5c471d60c325ed3c1",
+      "frame2frame/content.py": "cab0e119e0618ab164fe8a271125a3199f310080d802e3dc48c0c86d9b9bb448",
+      "frame2frame/filters.py": "c7bf3ccd3bd5f2eb6b832ba6e224ea78570a4a354e4504e11ff57f0af019fe4c",
+      "frame2frame/geometry.py": "37ef8632b05a7a7bc1c2485f5affbd6d57c764a917f0f60cff47b710167f3741",
+      "frame2frame/pipeline.py": "2566a3927dbff28561d148233d18062d2066c8a17f3afa1a5c433c70683823d3",
+      "frame2frame/pose/__init__.py": "8ccaa8321177fe816c0232b59b81f7148c5554ea6b78ce77ff7b2b64f14e0608",
+      "frame2frame/pose/_canonical_pose.py": "d37c850e1738ff26083072e07863f41c3fd3da0bfe592cc6fa05d0dcf8f202d4",
+      "frame2frame/pose/_facemesh.py": "7c0cc39140e88c8636add73ac81db75f57c8118d68f37bde99eb90f75a27abbb",
+      "frame2frame/pose/_hopenet_model.py": "2a22741c66a558d759937b18585165459cefd7dd4a6ef83cddce5cffbb66afa2",
+      "frame2frame/pose/base.py": "2e58127062a9846a8c5898f2e77e45328f23fcfadf2ea15d1de3a9c3f3dc341b",
+      "frame2frame/pose/hopenet.py": "c93aeb7ef5a1a74b572b028033c49fd0e66cfee075f6c865c47c5bfed9d5d44c",
+      "frame2frame/pose/mediapipe_face.py": "97d53d3a0d9e981df2d2a6fea7725fa439243f55a38bc1b0f1273f0dd597d546",
+      "frame2frame/pose/scripted.py": "a3c2018b456c7c336003dad24d9ef0314d8c6255604f3f33b89121f25e910a81",
+      "frame2frame/pose/sixdrepnet.py": "e5d89442466da885238383c5c8717353745575da40f9546e64b6823d6809b65d",
+      "frame2frame/render.py": "f079b5aea3cc3a6060b44564bfd7b6ec5b3b640c1449ad1e4d2bd28ed58ef95f",
+      "frame2frame/video.py": "8e863f75a7a119b3ac19b97c2a4b0926433f9750ef9f71d73fac8d74bb7d69e0",
+      "scripts/_filter_comparison.py": "6cacf8c0c767cda41e81156e0807ac8701a9d0ca428c31dc48bf7e69441c0d2a",
+      "scripts/benchmark_repeated_smoothing.py": "3597b2f5ad3a0a9862c17d83e18fe7eb30d987fbda1270435d97c7b8e5ea3a02",
+      "scripts/benchmark_smoothing.py": "4f73ab15be0d83a31ab04d4bc3c009f6b2e2ca563ec61043dcf4d76696fafed6"
+    },
+    "versions": {
+      "numpy": "2.5.2",
+      "opencv-contrib-python": "4.14.0.94",
+      "scipy": "1.18.1"
+    },
+    "worktree_dirty": true
+  },
+  "results": [
+    {
+      "clean_motions": [
+        {
+          "motion": "smooth",
+          "motion_rmse_deg_aligned": 0.0,
+          "screen_age_censored": false,
+          "screen_age_frames": 0,
+          "screen_age_ms": 0.0,
+          "screen_motion_rmse_px_aligned": 0.0
+        },
+        {
+          "motion": "reversal",
+          "motion_rmse_deg_aligned": 0.0,
+          "screen_age_censored": false,
+          "screen_age_frames": 0,
+          "screen_age_ms": 0.0,
+          "screen_motion_rmse_px_aligned": 0.0
+        }
+      ],
+      "current_rmse_px": {
+        "max": 6.695958372535923,
+        "mean": 6.519838801687162,
+        "min": 6.353402192380104,
+        "sample_std": 0.10134948104531091
+      },
+      "filter": "none",
+      "macro_noise_wins_including_ties": 0,
+      "p95_reduction_pct": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "sample_std": 0.0
+      },
+      "rms_reduction_pct": {
+        "max": 0.0,
+        "mean": 0.0,
+        "min": 0.0,
+        "sample_std": 0.0
+      },
+      "worst_cell": {
+        "rms_reduction_pct": 0.0,
+        "seed": 20260730,
+        "workload": "smooth-white"
+      }
+    },
+    {
+      "clean_motions": [
+        {
+          "motion": "smooth",
+          "motion_rmse_deg_aligned": 0.33048895822150043,
+          "screen_age_censored": false,
+          "screen_age_frames": 2,
+          "screen_age_ms": 66.66666666666667,
+          "screen_motion_rmse_px_aligned": 0.4512051488767792
+        },
+        {
+          "motion": "reversal",
+          "motion_rmse_deg_aligned": 1.0302911666023475,
+          "screen_age_censored": false,
+          "screen_age_frames": 2,
+          "screen_age_ms": 66.66666666666667,
+          "screen_motion_rmse_px_aligned": 2.9572655081275596
+        }
+      ],
+      "current_rmse_px": {
+        "max": 10.771659516315035,
+        "mean": 10.29349070292475,
+        "min": 9.75086414069278,
+        "sample_std": 0.3283347347354436
+      },
+      "filter": "ema",
+      "macro_noise_wins_including_ties": 0,
+      "p95_reduction_pct": {
+        "max": 35.22151772305111,
+        "mean": 32.04945310241291,
+        "min": 25.779773922174098,
+        "sample_std": 2.5074487552674425
+      },
+      "rms_reduction_pct": {
+        "max": 34.314408383554586,
+        "mean": 31.635468937900264,
+        "min": 29.392193093138587,
+        "sample_std": 1.1544329903409667
+      },
+      "worst_cell": {
+        "rms_reduction_pct": 6.532939765458545,
+        "seed": 20260738,
+        "workload": "reversal-correlated"
+      }
+    },
+    {
+      "clean_motions": [
+        {
+          "motion": "smooth",
+          "motion_rmse_deg_aligned": 0.05825237736715597,
+          "screen_age_censored": false,
+          "screen_age_frames": 11,
+          "screen_age_ms": 366.66666666666663,
+          "screen_motion_rmse_px_aligned": 0.367515711068015
+        },
+        {
+          "motion": "reversal",
+          "motion_rmse_deg_aligned": 0.6580798220016774,
+          "screen_age_censored": false,
+          "screen_age_frames": 11,
+          "screen_age_ms": 366.66666666666663,
+          "screen_motion_rmse_px_aligned": 3.3406450515502497
+        }
+      ],
+      "current_rmse_px": {
+        "max": 48.96839725260149,
+        "mean": 48.249882355749364,
+        "min": 47.67658801959999,
+        "sample_std": 0.36506362029575234
+      },
+      "filter": "fir",
+      "macro_noise_wins_including_ties": 20,
+      "p95_reduction_pct": {
+        "max": 46.93497626395923,
+        "mean": 42.975682534790394,
+        "min": 36.90081031828639,
+        "sample_std": 2.7323691624557784
+      },
+      "rms_reduction_pct": {
+        "max": 46.3012717510239,
+        "mean": 41.93900862368062,
+        "min": 38.37792475552268,
+        "sample_std": 1.8390260066331643
+      },
+      "worst_cell": {
+        "rms_reduction_pct": 7.057964936316363,
+        "seed": 20260738,
+        "workload": "reversal-correlated"
+      }
+    },
+    {
+      "clean_motions": [
+        {
+          "motion": "smooth",
+          "motion_rmse_deg_aligned": 0.3688462960583141,
+          "screen_age_censored": false,
+          "screen_age_frames": 1,
+          "screen_age_ms": 33.333333333333336,
+          "screen_motion_rmse_px_aligned": 0.9461658697002637
+        },
+        {
+          "motion": "reversal",
+          "motion_rmse_deg_aligned": 0.5348362326371664,
+          "screen_age_censored": false,
+          "screen_age_frames": 0,
+          "screen_age_ms": 0.0,
+          "screen_motion_rmse_px_aligned": 3.1020281593254375
+        }
+      ],
+      "current_rmse_px": {
+        "max": 6.330677808436649,
+        "mean": 6.014018986239524,
+        "min": 5.710368493168684,
+        "sample_std": 0.1964093609964619
+      },
+      "filter": "oneeuro",
+      "macro_noise_wins_including_ties": 0,
+      "p95_reduction_pct": {
+        "max": 16.960330675874292,
+        "mean": 13.134529980540439,
+        "min": 7.339378978230638,
+        "sample_std": 2.1300807326920035
+      },
+      "rms_reduction_pct": {
+        "max": 16.031283910895656,
+        "mean": 14.487835847175083,
+        "min": 12.668283884782404,
+        "sample_std": 0.7547394299076942
+      },
+      "worst_cell": {
+        "rms_reduction_pct": 0.9550305117297708,
+        "seed": 20260735,
+        "workload": "reversal-correlated"
+      }
+    },
+    {
+      "clean_motions": [
+        {
+          "motion": "smooth",
+          "motion_rmse_deg_aligned": 0.35959849035896846,
+          "screen_age_censored": false,
+          "screen_age_frames": 0,
+          "screen_age_ms": 0.0,
+          "screen_motion_rmse_px_aligned": 0.9370252176732867
+        },
+        {
+          "motion": "reversal",
+          "motion_rmse_deg_aligned": 1.104349949458267,
+          "screen_age_censored": false,
+          "screen_age_frames": 1,
+          "screen_age_ms": 33.333333333333336,
+          "screen_motion_rmse_px_aligned": 6.3551528554510925
+        }
+      ],
+      "current_rmse_px": {
+        "max": 7.547865583554973,
+        "mean": 7.125237959380113,
+        "min": 6.769306807606031,
+        "sample_std": 0.19591340611196062
+      },
+      "filter": "kalman",
+      "macro_noise_wins_including_ties": 0,
+      "p95_reduction_pct": {
+        "max": 22.19502537645246,
+        "mean": 18.40530577507034,
+        "min": 10.338621545950433,
+        "sample_std": 2.9875513502865787
+      },
+      "rms_reduction_pct": {
+        "max": 21.31936556287983,
+        "mean": 18.06898866523695,
+        "min": 15.72259624385708,
+        "sample_std": 1.4497531928214902
+      },
+      "worst_cell": {
+        "rms_reduction_pct": -5.0748855514274105,
+        "seed": 20260731,
+        "workload": "smooth-correlated"
+      }
+    }
+  ],
+  "schema_version": 1
+}

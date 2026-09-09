@@ -1,0 +1,32 @@
+name: Feature request
+description: Propose a focused improvement
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What workflow or limitation should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the CLI, configuration entry point, or rendering behavior you have in mind.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: How should it be validated?
+      description: Suggest synthetic tests, benchmark metrics, or acceptance criteria.
+    validations:
+      required: true
+  - type: checkboxes
+    id: scope
+    attributes:
+        label: Scope check
+        options:
+        - label: I can describe and validate this request without sharing private face footage.
+          required: true

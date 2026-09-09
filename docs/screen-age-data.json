@@ -1,0 +1,144 @@
+{
+  "benchmark": {
+    "name": "BIWI Kinect Head Pose Database",
+    "publication_scope": "aggregate measurements only; no source media or record-level rows"
+  },
+  "figure_claim": "Across six registered causal FIR designs, recovered Screen Age equals analytic group delay in development and held-out diagnostics.",
+  "fir_designs": [
+    {
+      "analytic_delay_frames": 19,
+      "development_ci95_frames": [
+        19,
+        19
+      ],
+      "development_estimate_frames": 19,
+      "filter_name": "fir-fc-1-tw-3",
+      "held_out_ci95_frames": [
+        19,
+        19
+      ],
+      "held_out_diagnostic_frames": 19,
+      "project_default": false
+    },
+    {
+      "analytic_delay_frames": 11,
+      "development_ci95_frames": [
+        11,
+        11
+      ],
+      "development_estimate_frames": 11,
+      "filter_name": "fir-fc-1.5-tw-5",
+      "held_out_ci95_frames": [
+        11,
+        11
+      ],
+      "held_out_diagnostic_frames": 11,
+      "project_default": false
+    },
+    {
+      "analytic_delay_frames": 11,
+      "development_ci95_frames": [
+        11,
+        11
+      ],
+      "development_estimate_frames": 11,
+      "filter_name": "fir-fc-2.5",
+      "held_out_ci95_frames": [
+        11,
+        11
+      ],
+      "held_out_diagnostic_frames": 11,
+      "project_default": false
+    },
+    {
+      "analytic_delay_frames": 11,
+      "development_ci95_frames": [
+        11,
+        11
+      ],
+      "development_estimate_frames": 11,
+      "filter_name": "fir-project-default",
+      "held_out_ci95_frames": [
+        11,
+        11
+      ],
+      "held_out_diagnostic_frames": 11,
+      "project_default": true
+    },
+    {
+      "analytic_delay_frames": 7,
+      "development_ci95_frames": [
+        7,
+        7
+      ],
+      "development_estimate_frames": 7,
+      "filter_name": "fir-fc-4-tw-8",
+      "held_out_ci95_frames": [
+        7,
+        7
+      ],
+      "held_out_diagnostic_frames": 7,
+      "project_default": false
+    },
+    {
+      "analytic_delay_frames": 7,
+      "development_ci95_frames": [
+        7,
+        7
+      ],
+      "development_estimate_frames": 7,
+      "filter_name": "fir-fc-6-tw-8",
+      "held_out_ci95_frames": [
+        7,
+        7
+      ],
+      "held_out_diagnostic_frames": 7,
+      "project_default": false
+    }
+  ],
+  "hero": {
+    "filter_name": "fir-project-default",
+    "screen_age_frames": 11,
+    "screen_age_ms": 366.7
+  },
+  "kind": "screen-age-public-aggregate-receipt",
+  "protocol": {
+    "attitude_only": true,
+    "bootstrap_resamples": 2000,
+    "candidate_age_range_frames": [
+      0,
+      20
+    ],
+    "evaluation_split": "test",
+    "fps": 30.0,
+    "minimum_segment_frames": 75,
+    "reference": "past raw ground-truth attitude projected with the shared current carrier",
+    "screen_distance": 4.0,
+    "selection": "smallest exact argmin on the development equal-subject MSE curve; no cross-filter selection",
+    "selection_split": "development",
+    "test_role": "evaluation-only oracle diagnostic; no test selection",
+    "trim_frames": 15
+  },
+  "schema_version": 1,
+  "source": {
+    "artifact_kind": "filter-response-effective-age",
+    "sha256": "295ed603c3b80055be47388a91fca907649c612747820b3eb4a9a43bc4a01fe8"
+  },
+  "support": {
+    "eligible_segments": {
+      "development": 25,
+      "test": 20,
+      "total": 45
+    },
+    "retained_output_frames": {
+      "development": 5203,
+      "test": 4179,
+      "total": 9382
+    },
+    "subjects": {
+      "development": 10,
+      "test": 10,
+      "total": 20
+    }
+  }
+}
